@@ -92,7 +92,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="M18 Protocol Interface",
         epilog="Connect UART-TX to M18-J2 and UART-RX to M18-J1 to fake the charger and UART-GND to M18-GND")
-    parser.add_argument('port', type=str, help="Serial port to connect to (e.g., COM5)")
+    parser.add_argument('--port', type=str, help="Serial port to connect to (e.g., COM5)", default = "/dev/ttyUSB0")
     args = parser.parse_args()
 
     m = M18(args.port)
