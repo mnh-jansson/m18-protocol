@@ -20,9 +20,9 @@ class M18:
         self.port = serial.Serial(port, baudrate=2000, timeout=1, stopbits=1)
 
     def reset(self):
-        self.port.baudrate = 100
-        self.port.write(b'\x00')
-        self.port.baudrate = 2000
+        self.port.break_condition = True
+        time.sleep(0.2)
+        self.port.break_condition = False
         time.sleep(0.3)
         self.port.reset_input_buffer()
         self.port.write(b'\x55')
@@ -56,13 +56,11 @@ class M18:
         lsb_response = bytearray(self.reverse_bits(byte) for byte in msb_response)
         debug_print = " ".join(f"{byte:02X}" for byte in lsb_response)
         print(f"Received: {debug_print}")
-        time.sleep(0.1)
         return lsb_response
 
     def configure(self):
-        print("sending conf")
-        self.send_command(struct.pack('>BBBHHH', self.CONF_CMD, self.ACC, 8, 
-                                    self.CUTOFF_CURRENT, self.MAX_CURRENT, self.MAX_CURRENT))
+        self.send_command(struct.pack('>BBBHHHBB', self.CONF_CMD, self.ACC, 8, 
+                                    self.CUTOFF_CURRENT, self.MAX_CURRENT, self.MAX_CURRENT, 2, 13))
         return self.read_response(5)
 
     def get_snap(self):
@@ -79,7 +77,6 @@ class M18:
     
     def simulate(self):
         self.reset()
-        time.sleep(2)
         self.configure()
         self.get_snap()
         while True:
@@ -96,9 +93,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     m = M18(args.port)
-
-    if not m.reset():
-        print('WARNING: Failed to initiate protocol')
 
     print("Will now go into shell mode. For there you can send commands such as: \n \
            m.reset() \n \
