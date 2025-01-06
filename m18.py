@@ -21,8 +21,10 @@ class M18:
 
     def reset(self):
         self.port.break_condition = True
+        self.port.dtr = True
         time.sleep(0.2)
         self.port.break_condition = False
+        self.port.dtr = False
         time.sleep(0.3)
         self.port.reset_input_buffer()
         self.port.write(b'\x55')
@@ -85,9 +87,11 @@ class M18:
 
     def deactivate(self):
         self.port.break_condition = True
+        self.port.dtr = True
 
     def activate(self):
         self.port.break_condition = False
+        self.port.dtr = False
 
 
 if __name__ == '__main__':
