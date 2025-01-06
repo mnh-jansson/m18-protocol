@@ -83,6 +83,11 @@ class M18:
             self.keepalive()
             time.sleep(0.3)
 
+    def deactivate(self):
+        self.port.break_condition = True
+
+    def activate(self):
+        self.port.break_condition = False
 
 
 if __name__ == '__main__':
