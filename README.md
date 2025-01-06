@@ -10,6 +10,8 @@ Next step is figuring out what other commands are supported.
 
 In order to simulate the charger, the following circuit is proposed:
 
+**!!NOTE!!** When using fake FT232 chips, break condition is not supported. The behaviour can be emulated by using the DTR line to pull the TX line low.
+
 ![hardware](docs/wiring.png)
 
 ## Software
