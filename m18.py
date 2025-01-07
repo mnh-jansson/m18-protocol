@@ -35,7 +35,12 @@ class M18:
         else:
             print(f"Unexpected response: {response}")
             return False
-        
+
+    def endless_reset(self):
+        while True:
+            self.reset()
+            time.sleep(1)
+
     def reverse_bits(self, byte):
         return int(f"{byte:08b}"[::-1], 2)
     
@@ -105,9 +110,12 @@ if __name__ == '__main__':
 
     print("Will now go into shell mode. For there you can send commands such as: \n \
            m.reset() \n \
+           m.endless_reset() \n \
            m.get_snap() \n \
            m.configure() \n \
            m.calibrate() \n \
            m.keepalive() \n \
-           m.simulate() \n")
+           m.simulate() \n \
+           m.activate() \n \
+           m.deactivate() \n")
     code.InteractiveConsole(locals = locals()).interact('Entering shell...')
