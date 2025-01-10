@@ -26,10 +26,9 @@ class M18:
         self.port.break_condition = False
         self.port.dtr = False
         time.sleep(0.3)
-        self.port.reset_input_buffer()
-        self.port.write(b'\x55')
-        response = self.port.read(1)
-        if response == b'\x55':
+        self.send_command_without_CRC(struct.pack('>B', self.SYNC_BYTE))
+        response = self.read_response(1)
+        if response == self.SYNC_BYTE:
             print("Received synchronisation byte")
             return True
         else:
@@ -49,6 +48,13 @@ class M18:
         for byte in payload:
             checksum += byte & 0xFFFF
         return checksum
+    
+    def send_command_without_CRC(self, lsb_command):
+        self.port.reset_input_buffer()
+        msb_command = bytearray(self.reverse_bits(byte) for byte in lsb_command)
+        debug_print = " ".join(f"{byte:02X}" for byte in lsb_command)
+        print(f"Sending: {debug_print}")
+        self.port.write(msb_command)
     
     def send_command(self, lsb_command):
         self.port.reset_input_buffer()
