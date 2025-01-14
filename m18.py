@@ -28,7 +28,7 @@ class M18:
         time.sleep(0.3)
         self.send_command_without_CRC(struct.pack('>B', self.SYNC_BYTE))
         response = self.read_response(1)
-        if response == self.SYNC_BYTE:
+        if response and response[0] == self.SYNC_BYTE:
             print("Received synchronisation byte")
             return True
         else:
