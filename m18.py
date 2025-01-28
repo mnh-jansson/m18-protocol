@@ -26,7 +26,7 @@ class M18:
         self.port.break_condition = False
         self.port.dtr = False
         time.sleep(0.3)
-        self.send_command_without_CRC(struct.pack('>B', self.SYNC_BYTE))
+        self.send(struct.pack('>B', self.SYNC_BYTE))
         response = self.read_response(1)
         if response and response[0] == self.SYNC_BYTE:
             print("Received synchronisation byte")
@@ -48,26 +48,22 @@ class M18:
         for byte in payload:
             checksum += byte & 0xFFFF
         return checksum
-    
-    def send_command_without_CRC(self, lsb_command):
-        self.port.reset_input_buffer()
-        msb_command = bytearray(self.reverse_bits(byte) for byte in lsb_command)
-        debug_print = " ".join(f"{byte:02X}" for byte in lsb_command)
-        print(f"Sending: {debug_print}")
-        for byte in msb_command:
-            self.port.write(byte)
-            time.sleep(250/1000000.0) # 250us
-    
-    def send_command(self, lsb_command):
-        self.port.reset_input_buffer()
-        lsb_command += struct.pack(">H", self.checksum(lsb_command)) 
-        msb_command = bytearray(self.reverse_bits(byte) for byte in lsb_command)
-        debug_print = " ".join(f"{byte:02X}" for byte in lsb_command)
-        print(f"Sending: {debug_print}")
-        for byte in msb_command:
-            self.port.write(byte)
-            time.sleep(250/1000000.0) # 250us
 
+    def add_checksum(self, lsb_command):
+        lsb_command += struct.pack(">H", self.checksum(lsb_command)) 
+        return lsb_command
+    
+    def send(self, command):
+        self.port.reset_input_buffer()
+        debug_print = " ".join(f"{byte:02X}" for byte in command)
+        msb = bytearray(self.reverse_bits(byte) for byte in command)
+        print(f"Sending: {debug_print}")
+        for byte in msb:
+            self.port.write(bytes([byte]))
+            time.sleep(500/1000000.0) # 250us
+    
+    def send_command(self, command):
+        self.send(self.add_checksum(command))
 
     def read_response(self, size):
         msb_response = self.port.read(size)
