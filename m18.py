@@ -17,7 +17,7 @@ class M18:
     ACC = 4
 
     def __init__(self, port):
-        self.port = serial.Serial(port, baudrate=2000, timeout=1, stopbits=1)
+        self.port = serial.Serial(port, baudrate=2000, timeout=1, stopbits=2)
 
     def reset(self):
         self.port.break_condition = True
@@ -54,7 +54,9 @@ class M18:
         msb_command = bytearray(self.reverse_bits(byte) for byte in lsb_command)
         debug_print = " ".join(f"{byte:02X}" for byte in lsb_command)
         print(f"Sending: {debug_print}")
-        self.port.write(msb_command)
+        for byte in msb_command:
+            self.port.write(byte)
+            time.sleep(250/1000000.0) # 250us
     
     def send_command(self, lsb_command):
         self.port.reset_input_buffer()
@@ -62,7 +64,10 @@ class M18:
         msb_command = bytearray(self.reverse_bits(byte) for byte in lsb_command)
         debug_print = " ".join(f"{byte:02X}" for byte in lsb_command)
         print(f"Sending: {debug_print}")
-        self.port.write(msb_command)
+        for byte in msb_command:
+            self.port.write(byte)
+            time.sleep(250/1000000.0) # 250us
+
 
     def read_response(self, size):
         msb_response = self.port.read(size)
