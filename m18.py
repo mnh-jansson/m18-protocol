@@ -58,9 +58,7 @@ class M18:
         debug_print = " ".join(f"{byte:02X}" for byte in command)
         msb = bytearray(self.reverse_bits(byte) for byte in command)
         print(f"Sending: {debug_print}")
-        for byte in msb:
-            self.port.write(bytes([byte]))
-            time.sleep(500/1000000.0) # 250us
+        self.port.write(msb)
     
     def send_command(self, command):
         self.send(self.add_checksum(command))
