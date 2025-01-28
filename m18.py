@@ -20,6 +20,7 @@ class M18:
         self.port = serial.Serial(port, baudrate=2000, timeout=1, stopbits=2)
 
     def reset(self):
+        self.ACC = 4
         self.port.break_condition = True
         self.port.dtr = True
         time.sleep(0.2)
@@ -39,6 +40,12 @@ class M18:
         while True:
             self.reset()
             time.sleep(1)
+
+    def update_acc(self):
+        acc_values = [0x04, 0x0C, 0x1C]
+        current_index = acc_values.index(self.ACC)
+        next_index = (current_index + 1) % len(acc_values)
+        self.ACC = acc_values[next_index]
 
     def reverse_bits(self, byte):
         return int(f"{byte:08b}"[::-1], 2)
@@ -73,27 +80,32 @@ class M18:
     def configure(self):
         self.send_command(struct.pack('>BBBHHHBB', self.CONF_CMD, self.ACC, 8, 
                                     self.CUTOFF_CURRENT, self.MAX_CURRENT, self.MAX_CURRENT, 2, 13))
+        self.update_acc()
         return self.read_response(5)
 
     def get_snap(self):
         self.send_command(struct.pack('>BBB', self.SNAP_CMD, self.ACC, 0))
+        self.update_acc()
         return self.read_response(8)
     
     def keepalive(self):
         self.send_command(struct.pack('>BBB', self.KEEPALIVE_CMD, self.ACC, 0))
+        self.update_acc()
         return self.read_response(8)
     
     def calibrate(self):
         self.send_command(struct.pack('>BBB', self.CAL_CMD, self.ACC, 0))
+        self.update_acc()
         return self.read_response(8)
     
     def simulate(self):
         self.reset()
         self.configure()
         self.get_snap()
+        time.sleep(0.3)
         while True:
+            time.sleep(0.5)
             self.keepalive()
-            time.sleep(0.3)
 
     def deactivate(self):
         self.port.break_condition = True
