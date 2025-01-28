@@ -23,7 +23,7 @@ class M18:
         self.ACC = 4
         self.port.break_condition = True
         self.port.dtr = True
-        time.sleep(0.2)
+        time.sleep(0.3)
         self.port.break_condition = False
         self.port.dtr = False
         time.sleep(0.3)
@@ -77,10 +77,10 @@ class M18:
         print(f"Received: {debug_print}")
         return lsb_response
 
-    def configure(self):
+    def configure(self, state):
+        self.ACC = 4
         self.send_command(struct.pack('>BBBHHHBB', self.CONF_CMD, self.ACC, 8, 
-                                    self.CUTOFF_CURRENT, self.MAX_CURRENT, self.MAX_CURRENT, 2, 13))
-        self.update_acc()
+                                    self.CUTOFF_CURRENT, self.MAX_CURRENT, self.MAX_CURRENT, state, 13))
         return self.read_response(5)
 
     def get_snap(self):
@@ -90,7 +90,6 @@ class M18:
     
     def keepalive(self):
         self.send_command(struct.pack('>BBB', self.KEEPALIVE_CMD, self.ACC, 0))
-        self.update_acc()
         return self.read_response(8)
     
     def calibrate(self):
@@ -100,9 +99,12 @@ class M18:
     
     def simulate(self):
         self.reset()
-        self.configure()
+        self.configure(2)
         self.get_snap()
-        time.sleep(0.3)
+        time.sleep(0.5)
+        self.keepalive()
+        self.configure(1)
+        self.get_snap()
         while True:
             time.sleep(0.5)
             self.keepalive()
