@@ -109,6 +109,21 @@ class M18:
             time.sleep(0.5)
             self.keepalive()
 
+    def mcmd(self, cmd):
+        self.reset()
+        self.send_command(struct.pack('>BBB', cmd, self.ACC, 0))
+        return self.read_response(8)
+
+    def cmd1(self):
+        self.reset()
+        self.send_command(struct.pack('>BBBBBB', 0x01, 0x01, 0x00, 0x10, 0x00, 0x10))
+        return self.read_response(8)
+    
+    def cmd3(self):
+        self.reset()
+        self.send_command(struct.pack('>BBBBBB', 0x03, 0x03, 0x00, 0x00, 0x00, 0x00))
+        return self.read_response(8)
+
     def deactivate(self):
         self.port.break_condition = True
         self.port.dtr = True
