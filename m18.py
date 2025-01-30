@@ -144,7 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=str, help="Serial port to connect to (e.g., COM5)", default = "/dev/ttyUSB0")
     args = parser.parse_args()
 
-    #m = M18(args.port)
+    m = M18(args.port)
 
     print("Will now go into shell mode. For there you can send commands such as: \n \
            m.reset() \n \
