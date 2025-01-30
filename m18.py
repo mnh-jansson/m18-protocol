@@ -2,7 +2,10 @@
 import serial
 import time, struct, code
 import argparse
-import readline
+try:
+    import readline
+except ImportError:
+    pass
 
 
 class M18:
