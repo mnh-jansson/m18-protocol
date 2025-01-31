@@ -113,6 +113,13 @@ class M18:
             time.sleep(0.5)
             self.keepalive()
 
+    def test1(self):
+        self.reset()
+        self.ACC = 4
+        self.send_command(struct.pack('>BBBHHHBBB', self.CONF_CMD, self.ACC, 8, 
+                                    self.CUTOFF_CURRENT, self.MAX_CURRENT, self.MAX_CURRENT, 2, 13, 0))
+        return self.read_response(5)
+
     def mcmd(self, cmd):
         self.reset()
         self.send_command(struct.pack('>BBB', cmd, self.ACC, 0))
