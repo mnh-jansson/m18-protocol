@@ -51,7 +51,7 @@ class M18:
     ACC = 4
 
     def __init__(self, port):
-        self.port = serial.Serial(port, baudrate=2000, timeout=0.8, stopbits=2)
+        self.port = serial.Serial(port, baudrate=4800, timeout=0.8, stopbits=2)
 
     def reset(self):
         self.ACC = 4
@@ -257,8 +257,7 @@ class M18:
                 print(f"Response from: 0x{(addr_h * 0x100 + addr_l):04X}:", data_print)
             else:
                 data_print = " ".join(f"{byte:02X}" for byte in response)
-                print(f"Invalid response from: 0x{(addr_h * 0x100 + addr_l):04X}")
-                print(f"Response: {data_print}")
+                print(f"Invalid response from: 0x{(addr_h * 0x100 + addr_l):04X} Response: {data_print}")
         self.idle()
 
 
