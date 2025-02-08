@@ -100,7 +100,11 @@ class M18:
         self.send(self.add_checksum(command))
 
     def read_response(self, size):
-        msb_response = self.port.read(size)
+        msb_response = self.port.read(1)
+        if self.reverse_bits(msb_response[0]) == 0x82:
+            msb_response += self.port.read(1)
+        else:
+            msb_response += self.port.read(size-1)
         lsb_response = bytearray(self.reverse_bits(byte) for byte in msb_response)
         debug_print = " ".join(f"{byte:02X}" for byte in lsb_response)
         #print(f"Received: {debug_print}")
