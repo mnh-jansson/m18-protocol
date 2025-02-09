@@ -17,9 +17,10 @@ data_matrix = [
     [0x00, 0x11, 0x04],
     [0x00, 0x15, 0x04],
     [0x00, 0x19, 0x04],
-    [0x00, 0x23, 0x02],
+    [0x00, 0x23, 0x14],
     [0x00, 0x37, 0x04],
     [0x00, 0x69, 0x02],
+    [0x00, 0x7B, 0x01],
     [0x40, 0x00, 0x04],
     [0x40, 0x0A, 0x0A],
     [0x40, 0x14, 0x02],
@@ -39,10 +40,10 @@ def print_debug_bytes(data):
     print(f"DEBUG: ", data_print)
 
 class M18:
-    SYNC_BYTE = 0xAA
-    CAL_CMD = 0x55
-    CONF_CMD = 0x60
-    SNAP_CMD = 0x61
+    SYNC_BYTE     = 0xAA
+    CAL_CMD       = 0x55
+    CONF_CMD      = 0x60
+    SNAP_CMD      = 0x61
     KEEPALIVE_CMD = 0x62
 
     CUTOFF_CURRENT = 300
@@ -52,6 +53,7 @@ class M18:
 
     def __init__(self, port):
         self.port = serial.Serial(port, baudrate=4800, timeout=0.8, stopbits=2)
+        self.idle()
 
     def reset(self):
         self.ACC = 4
@@ -135,7 +137,7 @@ class M18:
         self.reset()
         print_debug_bytes(self.configure(2))
         print_debug_bytes(self.get_snapchat())
-        time.sleep(0.5)
+        time.sleep(0.6)
         print_debug_bytes(self.keepalive())
         print_debug_bytes(self.configure(1))
         print_debug_bytes(self.get_snapchat())
@@ -160,21 +162,66 @@ class M18:
         return self.read_response(length)
 
     def brute(self, a, b):
-        search = True
-        i = 0
         self.reset()
         try:
-            while search:
+            for i in range(0xff):
                 ret = self.cmd(a, b, i, i+5)
                 if ret[0] == 0x81:
-                    print("valid!")
-                    search = False
-                elif ret[0] == 0x82:
-                    i += 1   
+                    data_print = " ".join(f"{byte:02X}" for byte in ret)
+                    print(f"Valid response from: 0x{(a * 0x100 + b):04X} with length: 0x{i:02X}:", data_print)
         except KeyboardInterrupt:
             print("\nSimulation aborted by user. Exiting gracefully...")
         finally:
             self.idle() 
+
+    def full_brute(self, start=0):
+        upper = start >> 8 & 0xff
+        lower = start & 0xff
+        try:
+            for a in range(upper, 0xff): 
+                for b in range(lower, 0xff): 
+                    self.brute(a,b)
+        except KeyboardInterrupt:
+            print("\nSimulation aborted by user. Exiting gracefully...")
+        finally:
+            self.idle() 
+    
+    def wcmd(self, a,b,c,length):
+        self.send_command(struct.pack('>BBBBBB', 0x01, 0x05, 0x03, a, b, c))
+        return self.read_response(length)
+    
+    def wdebug(self, a,b,c,length):
+        self.reset()
+        data = self.wcmd(a,b,c,length)
+        data_print = " ".join(f"{byte:02X}" for byte in data)
+        print(f"Response from: 0x{(a * 0x100 + b):04X}:", data_print)
+        self.idle()
+    
+    def wbrute(self, start=0):
+        upper = start >> 8 & 0xff
+        lower = start & 0xff
+        self.reset()
+        try:
+            for a in range(upper, 0xff): 
+                for b in range(lower, 0xff): 
+                    ret = self.wcmd(a, b, 2, 2+5)
+                    if ret[0] == 0x80:
+                        data_print = " ".join(f"{byte:02X}" for byte in ret)
+                        print(f"Valid write at: 0x{(a * 0x100 + b):04X}: ", data_print)
+        except KeyboardInterrupt:
+            print("\nSimulation aborted by user. Exiting gracefully...")
+        finally:
+            self.idle() 
+
+    def write_message(self, message):
+        if len(message) > 0x14:
+            print("ERROR: Message too long!")
+            return
+        print(f"Writing \"{message}\" to memory")
+        self.reset()
+        message = message.ljust(0x14, '-')
+        for i, char in enumerate(message):
+            self.wcmd(0,0x23+i,ord(char), 2)
 
     def idle(self):
         self.port.break_condition = True
@@ -226,6 +273,7 @@ class M18:
         ram_data = self.cmd(0x90, 0x0a, 0x3b, (0x3b + 5))
         mfg_time_data = self.cmd(0x00, 0x11, 0x4, (0x4 + 5))
         now_data = self.cmd(0x00, 0x37, 0x4, (0x4 + 5))
+        bytes_message = self.cmd(0x00, 0x23, 0x14, (0x14 + 5))
         self.idle()
 
         voltage_data = voltage_data[3:]
@@ -240,12 +288,14 @@ class M18:
         temp = self.calculate_temperature(temp_adc)
         mfg_dt = self.bytes2dt(mfg_time_data[3:7])
         now_dt = self.bytes2dt(now_data[3:7])
+        string = bytes_message[3:23].decode('utf-8')
 
         print(f"\nCell temperature: {temp}°C")
         print(f"Number of charges: {num_charges}")
         print(f"Internal clock: {now_dt.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"Days since first charge: {days}")
         print(f"Date of manufacturing: {mfg_dt.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Message: {string}")
 
     def read_all(self):
         self.reset()
@@ -274,6 +324,7 @@ if __name__ == '__main__':
            m.simulate() \n \
            m.read_all() \n \
            m.read_bat() \n \
+           m.write_message(message) \n \
            \n \
            Debug: \n \
            m.brute(addr_h, addr_l) \n \
