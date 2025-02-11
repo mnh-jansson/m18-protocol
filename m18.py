@@ -64,7 +64,10 @@ class M18:
         self.port.dtr = False
         time.sleep(0.3)
         self.send(struct.pack('>B', self.SYNC_BYTE))
-        response = self.read_response(1)
+        try:
+            response = self.read_response(1)
+        except:
+            return False
         time.sleep(0.01)
         if response and response[0] == self.SYNC_BYTE:
             return True
@@ -103,6 +106,8 @@ class M18:
 
     def read_response(self, size):
         msb_response = self.port.read(1)
+        if not msb_response or len(msb_response) < 1:
+            raise ValueError("Empty response")
         if self.reverse_bits(msb_response[0]) == 0x82:
             msb_response += self.port.read(1)
         else:
@@ -214,14 +219,17 @@ class M18:
             self.idle() 
 
     def write_message(self, message):
-        if len(message) > 0x14:
-            print("ERROR: Message too long!")
-            return
-        print(f"Writing \"{message}\" to memory")
-        self.reset()
-        message = message.ljust(0x14, '-')
-        for i, char in enumerate(message):
-            self.wcmd(0,0x23+i,ord(char), 2)
+        try:
+            if len(message) > 0x14:
+                print("ERROR: Message too long!")
+                return
+            print(f"Writing \"{message}\" to memory")
+            self.reset()
+            message = message.ljust(0x14, '-')
+            for i, char in enumerate(message):
+                self.wcmd(0,0x23+i,ord(char), 2)
+        except Exception as e:
+            print(f"write_message: Failed with error: {e}")
 
     def idle(self):
         self.port.break_condition = True
@@ -258,6 +266,8 @@ class M18:
                 time.sleep(1)
         except KeyboardInterrupt:
             print("\nRead aborted by user. Exiting gracefully...")
+        except Exception as e:
+            print(f"read_clock: Failed with error: {e}")
         finally:
             self.idle() 
 
@@ -267,48 +277,55 @@ class M18:
         return dt
 
     def read_bat(self):
-        self.reset()
-        voltage_data = self.cmd(0x40, 0x0a, 0x0a, (0x0a + 5)) # read all voltages
-        temp_data = self.cmd(0x40, 0x14, 0x2, (0x2 + 5))
-        ram_data = self.cmd(0x90, 0x0a, 0x3b, (0x3b + 5))
-        mfg_time_data = self.cmd(0x00, 0x11, 0x4, (0x4 + 5))
-        now_data = self.cmd(0x00, 0x37, 0x4, (0x4 + 5))
-        bytes_message = self.cmd(0x00, 0x23, 0x14, (0x14 + 5))
-        self.idle()
+        try:
+            self.reset()
+            voltage_data = self.cmd(0x40, 0x0a, 0x0a, (0x0a + 5)) # read all voltages
+            temp_data = self.cmd(0x40, 0x14, 0x2, (0x2 + 5))
+            ram_data = self.cmd(0x90, 0x0a, 0x3b, (0x3b + 5))
+            mfg_time_data = self.cmd(0x00, 0x11, 0x4, (0x4 + 5))
+            now_data = self.cmd(0x00, 0x37, 0x4, (0x4 + 5))
+            bytes_message = self.cmd(0x00, 0x23, 0x14, (0x14 + 5))
+            self.idle()
 
-        voltage_data = voltage_data[3:]
+            voltage_data = voltage_data[3:]
 
-        cell_voltages = [int.from_bytes(voltage_data[i:i+2], 'big') / 1000 for i in range(0, 10, 2)]
-        for i, voltage in enumerate(cell_voltages, start=1):
-            print(f"Cell {i}: {voltage:.3f}V")
+            cell_voltages = [int.from_bytes(voltage_data[i:i+2], 'big') / 1000 for i in range(0, 10, 2)]
+            for i, voltage in enumerate(cell_voltages, start=1):
+                print(f"Cell {i}: {voltage:.3f}V")
 
-        days = (ram_data[9]<<8) + ram_data[10]
-        num_charges = (ram_data[21]<<8) + ram_data[22]
-        temp_adc = int.from_bytes(temp_data[3:5], 'big')
-        temp = self.calculate_temperature(temp_adc)
-        mfg_dt = self.bytes2dt(mfg_time_data[3:7])
-        now_dt = self.bytes2dt(now_data[3:7])
-        string = bytes_message[3:23].decode('utf-8')
+            days = (ram_data[9]<<8) + ram_data[10]
+            num_charges = (ram_data[21]<<8) + ram_data[22]
+            temp_adc = int.from_bytes(temp_data[3:5], 'big')
+            temp = self.calculate_temperature(temp_adc)
+            mfg_dt = self.bytes2dt(mfg_time_data[3:7])
+            now_dt = self.bytes2dt(now_data[3:7])
+            string = bytes_message[3:23].decode('utf-8')
 
-        print(f"\nCell temperature: {temp}°C")
-        print(f"Number of charges: {num_charges}")
-        print(f"Internal clock: {now_dt.strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"Days since first charge: {days}")
-        print(f"Date of manufacturing: {mfg_dt.strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"Message: {string}")
+            print(f"\nCell temperature: {temp}°C")
+            print(f"Number of charges: {num_charges}")
+            print(f"Internal clock: {now_dt.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"Days since first charge: {days}")
+            print(f"Date of manufacturing: {mfg_dt.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"Message: {string}")
+        except Exception as e:
+            print(f"read_bat: Failed with error: {e}")
 
     def read_all(self):
-        self.reset()
-        for addr_h, addr_l, length in data_matrix:
-            response = self.cmd(addr_h, addr_l, length, (length + 5))
-            if response and len(response) >= 4 and response[0] == 0x81:
-                data = response[3:3 + length]
-                data_print = " ".join(f"{byte:02X}" for byte in data)
-                print(f"Response from: 0x{(addr_h * 0x100 + addr_l):04X}:", data_print)
-            else:
-                data_print = " ".join(f"{byte:02X}" for byte in response)
-                print(f"Invalid response from: 0x{(addr_h * 0x100 + addr_l):04X} Response: {data_print}")
-        self.idle()
+        try:
+            self.reset()
+            for addr_h, addr_l, length in data_matrix:
+                response = self.cmd(addr_h, addr_l, length, (length + 5))
+                if response and len(response) >= 4 and response[0] == 0x81:
+                    data = response[3:3 + length]
+                    data_print = " ".join(f"{byte:02X}" for byte in data)
+                    print(f"Response from: 0x{(addr_h * 0x100 + addr_l):04X}:", data_print)
+                else:
+                    data_print = " ".join(f"{byte:02X}" for byte in response)
+                    print(f"Invalid response from: 0x{(addr_h * 0x100 + addr_l):04X} Response: {data_print}")
+            self.idle()
+        except Exception as e:
+            print(f"read_all: Failed with error: {e}")
+
 
 
 if __name__ == '__main__':
