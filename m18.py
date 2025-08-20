@@ -25,12 +25,16 @@ data_matrix = [
     [0x40, 0x0A, 0x0A],
     [0x40, 0x14, 0x02],
     [0x40, 0x16, 0x02],
-    [0x40, 0x1B, 0x02],
+    [0x40, 0x19, 0x02], # Forge only
+    [0x40, 0x1B, 0x02], 
+    [0x40, 0x1D, 0x02], # Forge only
+    [0x40, 0x1F, 0x02], # Forge only
     [0x60, 0x00, 0x02],
     [0x60, 0x02, 0x02],
     [0x60, 0x04, 0x04],
     [0x60, 0x08, 0x04],
     [0x90, 0x00, 0x3B],
+    [0x90, 0x3B, 0x3B], # Forge only
     [0x91, 0x52, 0x00],
     [0xA0, 0x00, 0x06]
 ]
@@ -50,6 +54,27 @@ class M18:
     MAX_CURRENT = 6000
 
     ACC = 4
+    
+    PRINT_TX = False
+    PRINT_RX = False
+    
+    # Used to temporarily disable then restore print_tx/rx state
+    PRINT_TX_SAVE = False 
+    PRINT_RX_SAVE = False
+        
+    def txrx_print(self, enable = True):
+        self.PRINT_TX = enable
+        self.PRINT_RX = enable
+        
+    def txrx_save_and_set(self, enable = True):
+        self.PRINT_TX_SAVE = self.PRINT_TX
+        self.PRINT_RX_SAVE = self.PRINT_RX
+        self.txrx_print(enable)
+        
+    def txrx_restore(self):
+        self.PRINT_TX = self.PRINT_TX_SAVE
+        self.PRINT_RX = self.PRINT_RX_SAVE
+            
 
     def __init__(self, port):
         self.port = serial.Serial(port, baudrate=4800, timeout=0.8, stopbits=2)
@@ -98,7 +123,8 @@ class M18:
         self.port.reset_input_buffer()
         debug_print = " ".join(f"{byte:02X}" for byte in command)
         msb = bytearray(self.reverse_bits(byte) for byte in command)
-        #print(f"Sending: {debug_print}")
+        if self.PRINT_TX:
+            print(f"Sending:  {debug_print}")
         self.port.write(msb)
     
     def send_command(self, command):
@@ -114,7 +140,8 @@ class M18:
             msb_response += self.port.read(size-1)
         lsb_response = bytearray(self.reverse_bits(byte) for byte in msb_response)
         debug_print = " ".join(f"{byte:02X}" for byte in lsb_response)
-        #print(f"Received: {debug_print}")
+        if self.PRINT_RX:
+            print(f"Received: {debug_print}")
         return lsb_response
 
     def configure(self, state):
@@ -130,7 +157,7 @@ class M18:
     
     def keepalive(self):
         self.send_command(struct.pack('>BBB', self.KEEPALIVE_CMD, self.ACC, 0))
-        return self.read_response(8)
+        return self.read_response(9)
     
     def calibrate(self):
         self.send_command(struct.pack('>BBB', self.CAL_CMD, self.ACC, 0))
@@ -154,23 +181,73 @@ class M18:
             print("\nSimulation aborted by user. Exiting gracefully...")
         finally:
             self.idle() 
+    
+
+    def simulate_for(self, duration):
+        # Simulate charging for 'time' seconds
+        print(f"Simulating charger communication for {duration} seconds...")
+        begin_time = time.time()
+        self.reset()
+        self.configure(2)
+        self.get_snapchat()
+        time.sleep(0.6)
+        self.keepalive()
+        self.configure(1)
+        self.get_snapchat()
+        try:
+            start_time = time.time()
+            while (time.time() - start_time) < duration:
+                time.sleep(0.5)
+                self.keepalive()
+        except KeyboardInterrupt:
+            print("\nSimulation aborted by user. Exiting gracefully...")
+        finally:
+            self.idle() 
+            print(f"Duration: ", time.time() - begin_time)
 
     def debug(self, a,b,c,length):
+        
+        # Turn off debug, restore after printing
+        rx_debug = self.PRINT_RX
+        tx_debug = self.PRINT_TX
+        self.PRINT_TX = False
+        self.PRINT_RX = False
+        
         self.reset()
+        self.PRINT_TX = tx_debug
         data = self.cmd(a,b,c,length)
         data_print = " ".join(f"{byte:02X}" for byte in data)
         print(f"Response from: 0x{(a * 0x100 + b):04X}:", data_print)
         self.idle()
+        self.PRINT_RX = rx_debug
+        
+    def try_cmd(self, cmd, msb, lsb, len, ret_len=0 ):
+        # Turn off TX/RX printing, restore after printing
+        self.txrx_save_and_set(False)
+        
+        # default is read 5 bytes more than payload (3-byte header, 2-byte cksum)
+        if ( ret_len == 0 ):
+            ret_len = len + 5
+        
+        self.reset()
+        self.send_command(struct.pack('>BBBBBB', cmd, 0x04, 0x03, msb, lsb, len))
+        data = self.read_response(ret_len)
+        data_print = " ".join(f"{byte:02X}" for byte in data)
+        print(f"Response from: 0x{(msb * 0x100 + lsb):04X}:", data_print)
+        self.idle()
+        self.txrx_restore()
+        
     
-    def cmd(self, a,b,c,length):
-        self.send_command(struct.pack('>BBBBBB', 0x01, 0x04, 0x03, a, b, c))
+    def cmd(self, a,b,c,length, command = 0x01):
+        self.send_command(struct.pack('>BBBBBB', command, 0x04, 0x03, a, b, c))
         return self.read_response(length)
+        
 
-    def brute(self, a, b):
+    def brute(self, a, b, len = 0xFF, command = 0x01):
         self.reset()
         try:
-            for i in range(0xff):
-                ret = self.cmd(a, b, i, i+5)
+            for i in range(len):
+                ret = self.cmd(a, b, i, i+5, command)
                 if ret[0] == 0x81:
                     data_print = " ".join(f"{byte:02X}" for byte in ret)
                     print(f"Valid response from: 0x{(a * 0x100 + b):04X} with length: 0x{i:02X}:", data_print)
@@ -179,15 +256,19 @@ class M18:
         finally:
             self.idle() 
 
-    def full_brute(self, start=0):
-        upper = start >> 8 & 0xff
-        lower = start & 0xff
+    def full_brute(self, start=0, stop=0xFFFF, len = 0xFF):        
+    # query every address by calling 'brute()' from 'start' to 'stop'
+    # 'len' should be 0x01 to 0xFF. 0x0A is a good value that should find all registers
         try:
-            for a in range(upper, 0xff): 
-                for b in range(lower, 0xff): 
-                    self.brute(a,b)
+            for addr in range(start, stop): 
+                msb = (addr >> 8) & 0xFF # separate upper 8-bits of addr
+                lsb = addr & 0xFF # separate lower 8-bits of addr
+                self.brute(msb,lsb, len, 0x01)
+                if ( (addr % 256) == 0 ):
+                    print(f"addr = 0x{addr:04X} ", datetime.datetime.now() )
         except KeyboardInterrupt:
             print("\nSimulation aborted by user. Exiting gracefully...")
+            print(f"\nStopped at address: 0x{addr:04X}")
         finally:
             self.idle() 
     
@@ -238,6 +319,11 @@ class M18:
     def high(self):
         self.port.break_condition = False
         self.port.dtr = False
+        
+    def high_for(self, duration):
+        self.high()
+        time.sleep(duration)
+        self.idle()
 
     def calculate_temperature(self, adc_value):
         R1 = 10e3  # 10k ohm
@@ -277,6 +363,10 @@ class M18:
         return dt
 
     def read_bat(self):
+        
+        # turn off debugging messages
+        self.txrx_save_and_set(False)
+        
         try:
             self.reset()
             voltage_data = self.cmd(0x40, 0x0a, 0x0a, (0x0a + 5)) # read all voltages
@@ -309,6 +399,10 @@ class M18:
             print(f"Message: {string}")
         except Exception as e:
             print(f"read_bat: Failed with error: {e}")
+            
+        # restore debug status
+        self.txrx_restore()
+        
 
     def read_all(self):
         try:
@@ -325,7 +419,61 @@ class M18:
             self.idle()
         except Exception as e:
             print(f"read_all: Failed with error: {e}")
+            
+    def read_all_spreadsheet(self):
+        try:
+            self.reset()
+            for addr_h, addr_l, length in data_matrix:
+                response = self.cmd(addr_h, addr_l, length, (length + 5))
+                if response and len(response) >= 4 and response[0] == 0x81:
+                    # extract payload. message without header and cksum
+                    data = response[3:(3+length)]
+                    print(f"0x{(addr_h * 0x100 + addr_l):04X}")
+                    if len(data) == 0:
+                        print("EMPTY")
+                    else:
+                        # data_print = "\n".join(f"{byte:02X}" for byte in data)
+                        data_print = "\n".join(f"{byte}" for byte in data)
+                        print(data_print)
+                else:
+                    print(f"0x{(addr_h * 0x100 + addr_l):04X}")
+                    data_print = " ".join(f"{byte:02X}" for byte in response)
+                    print(f"INV: {data_print}")
+            self.idle()
+        except Exception as e:
+            print(f"read_all_spreadsheet: Failed with error: {e}")
 
+    def help(self):
+        print("Functions: \n \
+           m.simulate() - simulate charging comms \n \
+           m.simulate_for(t) - simulate for t seconds \n \
+           m.high_for(t) - bring J2 high for t sec, then idle \n \
+           m.read_all() - print all known registers in 0x01 command \n \
+           m.read_all_spreadsheet() - print registers in spreadsheet format \n \
+           m.read_bat() - formatted print of all mapped registers\n \
+           m.write_message(message) - write ascii string to 0x0023 register (20 chars)\n \
+           \n \
+           Debug: \n \
+           m.PRINT_TX = True - boolean to enable TX messages \n \
+           m.PRINT_RX = True - boolean to enable RX messages \n \
+           m.txrx_print(bool) - set PRINT_TX & RX to bool \n \
+           m.txrx_save_and_set(bool) - save PRINT_TX & RX state, then set both to bool \n \
+           m.txrx_restore() - restore PRINT_TX & RX to saved values \n \
+           m.brute(addr_msb, addr_lsb) \n \
+           m.full_brute(start, stop, len) - check registers from 'start' to 'stop'. look for 'len' bytes \n \
+           m.debug(addr_msb, addr_lsb, len, rsp_len) - send reset() then cmd() to battery \n \
+           m.try_cmd(cmd, addr_h, addr_l, len) - try 'cmd' at [addr_h addr_l] with 'len' bytes \n \
+           \n \
+           Internal:\n \
+           m.high() - bring J2 pin high (20V)\n \
+           m.idle() - pull J2 pin low (0V) \n \
+           m.reset() - send 0xAA to battery. Return true if batter yreplies wih 0xAA \n \
+           m.get_snap() - request 'snapchat' from battery (0x61)\n \
+           m.configure() - send 'configure' message (0x60, charger parameters)\n \
+           m.calibrate() - calibration/interrupt command (0x55) \n \
+           m.keepalive() - send charge current request (0x62) \n \
+           \n \
+           m.help() - this message\n") 
 
 
 if __name__ == '__main__':
@@ -336,23 +484,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     m = M18(args.port)
-
-    print("Will now go into shell mode. For there you can call functions: \n \
-           m.simulate() \n \
-           m.read_all() \n \
-           m.read_bat() \n \
-           m.write_message(message) \n \
-           \n \
-           Debug: \n \
-           m.brute(addr_h, addr_l) \n \
-           m.debug(addr_h, addr_l, len, rsp_len) \n \
-           \n \
-           Internal:\n \
-           m.high() \n \
-           m.idle() \n \
-           m.reset() \n \
-           m.get_snap() \n \
-           m.configure() \n \
-           m.calibrate() \n \
-           m.keepalive() \n")
+    
+    m.help()
+    
     code.InteractiveConsole(locals = locals()).interact('Entering shell...')
