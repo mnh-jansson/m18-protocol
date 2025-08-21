@@ -444,6 +444,10 @@ class M18:
                     print(f"0x{(addr_h * 0x100 + addr_l):04X}")
                     data_print = " ".join(f"{byte:02X}" for byte in response)
                     print(f"INV: {data_print}")
+                    # pad with "blank" so data lines up in spreadsheet
+                    for i in range(1,length): 
+                        print("blank")
+                    
             self.idle()
         except Exception as e:
             print(f"read_all_spreadsheet: Failed with error: {e}")
