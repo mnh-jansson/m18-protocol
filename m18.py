@@ -428,6 +428,12 @@ class M18:
     def read_all_spreadsheet(self):
         try:
             self.reset()
+            
+            # Add date to top
+            now = datetime.datetime.now()
+            formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
+            print(formatted_time)
+            
             for addr_h, addr_l, length in data_matrix:
                 response = self.cmd(addr_h, addr_l, length, (length + 5))
                 if response and len(response) >= 4 and response[0] == 0x81:
