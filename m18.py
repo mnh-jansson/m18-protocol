@@ -429,6 +429,9 @@ class M18:
         try:
             self.reset()
             
+            # Do dummy read to update 0x9000 data
+            tmp = self.cmd(0x90, 0x00, 4, 9)
+            
             # Add date to top
             now = datetime.datetime.now()
             formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
