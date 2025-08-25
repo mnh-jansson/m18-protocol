@@ -430,7 +430,12 @@ class M18:
             self.reset()
             
             # Do dummy read to update 0x9000 data
-            tmp = self.cmd(0x90, 0x00, 4, 9)
+            for addr_h, addr_l, length in data_matrix:
+                response = self.cmd(addr_h, addr_l, length, (length + 5))
+            self.idle()
+            time.sleep(0.5)
+            
+            self.reset()
             
             # Add date to top
             now = datetime.datetime.now()
