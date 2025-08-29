@@ -672,6 +672,10 @@ class M18:
                         case "date":
                             date_value = self.bytes2dt(data)
                             value = date_value.strftime('%Y-%m-%d %H:%M:%S')
+                        case "duration":
+                            dur = int.from_bytes(data, 'big')
+                            td = time.gmtime(dur)
+                            value = time.strftime("%H:%M:%S", td)
                         case "ascii":
                             str = data.decode('utf-8')
                             value = f'\"{str}\"'
