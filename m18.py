@@ -45,192 +45,199 @@ data_matrix = [
 ]
 
 
-# label, addr, len, type (decimal, date, ascii, serial, adc_temp, dec_temp, cell_volts)
+# label, addr, len, type 
+#   uint - unsigned integer
+#   date - UNIX time (seconds from 1 Jan 1970)
+#   ascii - ascii string
+#   sn - serial number (2 bytes battery type, 3 bytes serial)
+#   adc_t - analog-to-digital converter temperature (mV of thermistor)
+#   dec_t - decimal temperature (byte_1 + byte_2/255)
+#   cell_v - cell voltages (1: 3568, 2: 3567, 3:3570, etc)
 data_id = [
-    [0x0000, 2,  "decimal", "Cell type"],                       # 0
-    [0x0002, 2,  "decimal", "Unknown (always 0)"], 
-    [0x0004, 5,  "serial",  "Capacity & Serial number (?)"], 
-    [0x000D, 4,  "decimal", "Unknown (4th code?)"], 
-    [0x0011, 4,  "date",    "Manufacture date"], 
-    [0x0015, 4,  "date",    "Date of first charge (Forge)"], 
-    [0x0019, 4,  "date",    "Date of last charge (Forge)"], 
-    [0x0023, 20, "ascii",   "Note (ascii string)"], 
-    [0x0037, 4,  "date",    "Current date"], 
-    [0x0069, 2,  "decimal", "Unknown (always 2)"]	, 
-    [0x007B, 1,  "decimal", "Unknown (always 0)"],              # 10
-    [0x4000, 4,  "decimal", "Unknown (Forge)"], 
-    [0x400A, 10, "cell_v",  "Cell voltages (mV)"], 
-    [0x4014, 2,  "adc_temp","Temperature (C) (non-Forge)"], 
-    [0x4016, 2,  "decimal", "Unknown (Forge)"], 
-    [0x4019, 2,  "decimal", "Unknown (Forge)"], 
-    [0x401B, 2,  "decimal", "Unknown (Forge)"], 
-    [0x401D, 2,  "decimal", "Unknown (Forge)"], 
-    [0x401F, 2,  "dec_temp","Temperature (C) (Forge)"], 
-    [0x6000, 2,  "decimal", "Unknown (Forge)"], 
-    [0x6002, 2,  "decimal", "Unknown (Forge)"],                 # 20
-    [0x6004, 4,  "decimal", "Unknown (Forge)"], 
-    [0x6008, 4,  "decimal", "Unknown (Forge)"], 
-    [0x600C, 2,  "decimal", "Unknown (Forge)"], 
-    [0x9000, 4,  "date",    "Date of first charge (rounded)"], 
-    [0x9004, 4,  "date",    "Date of last tool use (rounded)"], 
-    [0x9008, 4,  "date",    "Date of last charge (rounded)"], 
-    [0x900C, 4,  "date",    "Unknown date (often zero)"], 
-    [0x9010, 2,  "decimal", "Days since first charge"], 
-    [0x9012, 4,  "decimal", "Total discharge (amp-sec)"], 
-    [0x9016, 4,  "decimal", "Total discharge (watt-sec or joules)"],    #30 
-    [0x901A, 4,  "decimal", "Total charge count"], 
-    [0x901E, 2,  "decimal", "Dumb charge count (J2>7.1V for >=0.48s)"], 
-    [0x9020, 2,  "decimal", "Redlink (UART) charge count"], 
-    [0x9022, 2,  "decimal", "Completed charge count (?)"], 
-    [0x9024, 4,  "duration","Total charging time (HH:MM:SS)"], 
-    [0x9028, 4,  "duration","Time on charger whilst full (HH:MM:SS)"], 
-    [0x902C, 2,  "decimal", "Unknown (almost always 0)"], 
-    [0x902E, 2,  "decimal", "Charge started with a cell < 2.5V"], 
-    [0x9030, 2,  "decimal", "Unknown (discharge to empty?)"], 
-    [0x9032, 2,  "decimal", "Num. overheat on tool (must be > 10A)"],   #40
-    [0x9034, 2,  "decimal", "Unknown (overcurrent?)"], 
-    [0x9036, 2,  "decimal", "Soft overloads (trigger low voltage)"], 
-    [0x9038, 2,  "decimal", "Hard overloads (4 LEDs)"], 
-    [0x903A, 2,  "decimal", "Discharge @ 10-20A (seconds)"], 
-    [0x903C, 2,  "decimal", "          @ 20-30A (could be watts)"], 
-    [0x903E, 2,  "decimal", "          @ 30-40A      "], 
-    [0x9040, 2,  "decimal", "          @ 40-50A      "], 
-    [0x9042, 2,  "decimal", "          @ 50-60A      "], 
-    [0x9044, 2,  "decimal", "          @ 60-70A      "], 
-    [0x9046, 2,  "decimal", "          @ 70-80A      "],    #50
-    [0x9048, 2,  "decimal", "          @ 80-90A      "], 
-    [0x904A, 2,  "decimal", "          @ 90-100A     "], 
-    [0x904C, 2,  "decimal", "          @ 100-110A    "], 
-    [0x904E, 2,  "decimal", "          @ 110-120A    "], 
-    [0x9050, 2,  "decimal", "          @ 120-130A    "], 
-    [0x9052, 2,  "decimal", "          @ 130-140A    "], 
-    [0x9054, 2,  "decimal", "          @ 140-150A    "], 
-    [0x9056, 2,  "decimal", "          @ 150-160A    "], 
-    [0x9058, 2,  "decimal", "          @ 160-170A    "], 
-    [0x905A, 2,  "decimal", "          @ 170-180A    "],    #60
-    [0x905C, 2,  "decimal", "          @ 180-190A    "], 
-    [0x905E, 2,  "decimal", "          @ 190-200A    "], 
-    [0x9060, 2,  "decimal", "          @ 200-210A    "], 
-    [0x9062, 2,  "decimal", "Unknown (larger in lower Ah packs)"], 
-    [0x9064, 2,  "decimal", "Discharge @ 10-15A (seconds)"], 
-    [0x9066, 2,  "decimal", "          @ 15-20A (could be watts)"], 
-    [0x9068, 2,  "decimal", "          @ 20-25A      "], 
-    [0x906A, 2,  "decimal", "          @ 25-30A      "], 
-    [0x906C, 2,  "decimal", "          @ 30-35A      "], 
-    [0x906E, 2,  "decimal", "          @ 35-40A      "],    #70
-    [0x9070, 2,  "decimal", "          @ 40-45A      "], 
-    [0x9072, 2,  "decimal", "          @ 45-50A      "], 
-    [0x9074, 2,  "decimal", "          @ 50-55A      "], 
-    [0x9076, 2,  "decimal", "          @ 55-60A      "], 
-    [0x9078, 2,  "decimal", "          @ 60-65A      "], 
-    [0x907A, 2,  "decimal", "          @ 65-70A      "], 
-    [0x907C, 2,  "decimal", "          @ 70-65A      "], 
-    [0x907E, 2,  "decimal", "          @ 75-80A      "], 
-    [0x9080, 2,  "decimal", "          @ 80-85A      "], 
-    [0x9082, 2,  "decimal", "          @ 85-90A      "],    #80
-    [0x9084, 2,  "decimal", "          @ 90-95A      "], 
-    [0x9086, 2,  "decimal", "          @ 95-100A     "], 
-    [0x9088, 2,  "decimal", "          @ 100-105A    "], 
-    [0x908A, 2,  "decimal", "          @ 105-110A    "], 
-    [0x908C, 2,  "decimal", "          @ 110-115A    "], 
-    [0x908E, 2,  "decimal", "          @ 115-120A    "], 
-    [0x9090, 2,  "decimal", "          @ 120-125A    "], 
-    [0x9092, 2,  "decimal", "          @ 125-130A    "], 
-    [0x9094, 2,  "decimal", "          @ 130-135A    "], 
-    [0x9096, 2,  "decimal", "          @ 135-140A    "],    #90
-    [0x9098, 2,  "decimal", "          @ 140-145A    "], 
-    [0x909A, 2,  "decimal", "          @ 145-150A    "], 
-    [0x909C, 2,  "decimal", "          @ 150-155A    "], 
-    [0x909E, 2,  "decimal", "          @ 155-160A    "], 
-    [0x90A0, 2,  "decimal", "          @ 160-165A    "], 
-    [0x90A2, 2,  "decimal", "          @ 165-170A    "], 
-    [0x90A4, 2,  "decimal", "          @ 170-175A    "], 
-    [0x90A6, 2,  "decimal", "          @ 175-180A    "], 
-    [0x90A8, 2,  "decimal", "          @ 180-185A    "], 
-    [0x90AA, 2,  "decimal", "          @ 185-190A    "],    #100
-    [0x90AC, 2,  "decimal", "          @ 190-195A    "], 
-    [0x90AE, 2,  "decimal", "          @ 195-200A    "], 
-    [0x90B0, 2,  "decimal", "          @ 200A+       "], 
-    [0x90B2, 2,  "decimal", "Unknown (discharge related?)"], 
-    [0x90B4, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90B6, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90B8, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90BA, 2,  "decimal", "Unknown (put on charger when full?)"], 
-    [0x90BC, 2,  "decimal", "Unknown (counter)"], 
-    [0x90BE, 2,  "decimal", "Unknown (counter)"],               #110
-    [0x90C0, 2,  "decimal", "Unknown (incomplete charges?)"], 
-    [0x90C2, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90C4, 2,  "decimal", "Unknown (charge finished?)"], 
-    [0x90C6, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90C8, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90CA, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90CC, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90CE, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90D0, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90D2, 2,  "decimal", "Unknown (put on charger when full?)"],     #120
-    [0x90D4, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90D6, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90D8, 2,  "decimal", "Unknown (hot charge?)"], 
-    [0x90DA, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90DC, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90DE, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90E0, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90E2, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90E4, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90E6, 2,  "decimal", "Unknown (charge counter?)"],       #130
-    [0x90E8, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90EA, 2,  "decimal", "Unknown (put on charger when full?)"], 
-    [0x90EC, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90EE, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90F0, 2,  "decimal", "Unknown (hot charge?)"], 
-    [0x90F2, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90F4, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x90F6, 2,  "decimal", "Dumb charge time (0-0:14:33)"], 
-    [0x90F8, 2,  "decimal", "Dumb charge time (14:34-29:07)"], 
-    [0x90FA, 2,  "decimal", "Dumb charge time (29:08-43:41)"],  #140
-    [0x90FC, 2,  "decimal", "Dumb charge time (43:42-58:15)"], 
-    [0x90FE, 2,  "decimal", "Dumb charge time (58:16-1:12:49)"], 
-    [0x9100, 2,  "decimal", "Dumb charge time ()"], 
-    [0x9102, 2,  "decimal", "Dumb charge time ()"], 
-    [0x9104, 2,  "decimal", "Dumb charge time ()"], 
-    [0x9106, 2,  "decimal", "Dumb charge time ()"], 
-    [0x9108, 2,  "decimal", "Dumb charge time ()"], 
-    [0x910A, 2,  "decimal", "Dumb charge time ()"], 
-    [0x910C, 2,  "decimal", "Dumb charge time ()"], 
-    [0x910E, 2,  "decimal", "Dumb charge time ()"],             #150
-    [0x9110, 2,  "decimal", "Dumb charge time ()"], 
-    [0x9112, 2,  "decimal", "Redlink charge time (0-17:03)"], 
-    [0x9114, 2,  "decimal", "Redlink charge time (17:04-34:07)"], 
-    [0x9116, 2,  "decimal", "Redlink charge time (34:08-51:11)"], 
-    [0x9118, 2,  "decimal", "Redlink charge time (51:12-1:08:15)"], 
-    [0x911A, 2,  "decimal", "Redlink charge time (1:08:16-1:25:19)"], 
-    [0x911C, 2,  "decimal", "Redlink charge time (1:25:20-1:42:23)"], 
-    [0x911E, 2,  "decimal", "Redlink charge time (1:42:24-1:59:27)"], 
-    [0x9120, 2,  "decimal", "Redlink charge time (1:59:28-2:16:31)"], 
-    [0x9122, 2,  "decimal", "Redlink charge time (2:16:32-2:33:35)"],   #160 
-    [0x9124, 2,  "decimal", "Redlink charge time (2:33:36-2:50:39)"], 
-    [0x9126, 2,  "decimal", "Redlink charge time (2:50:40-3:07:43)"], 
-    [0x9128, 2,  "decimal", "Redlink charge time (3:07:44-3:24:47)"], 
-    [0x912A, 2,  "decimal", "Redlink charge time (3:24:48-3:41:51)"], 
-    [0x912C, 2,  "decimal", "Redlink charge time (3:41:52-3:58:55)"], 
-    [0x912E, 2,  "decimal", "Unknown (completed charge?)"], 
-    [0x9130, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x9132, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x9134, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x9136, 2,  "decimal", "Unknown (charge counter?)"],       #170
-    [0x9138, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x913A, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x913C, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x913E, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x9140, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x9142, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x9144, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x9146, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x9148, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x914A, 2,  "decimal", "Unknown (charge counter?)"],       # 180
-    [0x914C, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x914E, 2,  "decimal", "Unknown (charge counter?)"], 
-    [0x9150, 2,  "decimal", "Unknown (charge counter?)"],       #183
+    [0x0000, 2,  "uint",  "Cell type"],                       # 0
+    [0x0002, 2,  "uint",  "Unknown (always 0)"], 
+    [0x0004, 5,  "sn",    "Capacity & Serial number (?)"], 
+    [0x000D, 4,  "uint",  "Unknown (4th code?)"], 
+    [0x0011, 4,  "date",  "Manufacture date"], 
+    [0x0015, 4,  "date",  "Date of first charge (Forge)"], 
+    [0x0019, 4,  "date",  "Date of last charge (Forge)"], 
+    [0x0023, 20, "ascii", "Note (ascii string)"], 
+    [0x0037, 4,  "date",  "Current date"], 
+    [0x0069, 2,  "uint",  "Unknown (always 2)"]	, 
+    [0x007B, 1,  "uint",  "Unknown (always 0)"],              # 10
+    [0x4000, 4,  "uint",  "Unknown (Forge)"], 
+    [0x400A, 10, "cell_v","Cell voltages (mV)"], 
+    [0x4014, 2,  "adc_t", "Temperature (C) (non-Forge)"], 
+    [0x4016, 2,  "uint",  "Unknown (Forge)"], 
+    [0x4019, 2,  "uint",  "Unknown (Forge)"], 
+    [0x401B, 2,  "uint",  "Unknown (Forge)"], 
+    [0x401D, 2,  "uint",  "Unknown (Forge)"], 
+    [0x401F, 2,  "dec_t", "Temperature (C) (Forge)"], 
+    [0x6000, 2,  "uint",  "Unknown (Forge)"], 
+    [0x6002, 2,  "uint",  "Unknown (Forge)"],                 # 20
+    [0x6004, 4,  "uint",  "Unknown (Forge)"], 
+    [0x6008, 4,  "uint",  "Unknown (Forge)"], 
+    [0x600C, 2,  "uint",  "Unknown (Forge)"], 
+    [0x9000, 4,  "date",  "Date of first charge (rounded)"], 
+    [0x9004, 4,  "date",  "Date of last tool use (rounded)"], 
+    [0x9008, 4,  "date",  "Date of last charge (rounded)"], 
+    [0x900C, 4,  "date",  "Unknown date (often zero)"], 
+    [0x9010, 2,  "uint",  "Days since first charge"], 
+    [0x9012, 4,  "uint",  "Total discharge (amp-sec)"], 
+    [0x9016, 4,  "uint",  "Total discharge (watt-sec or joules)"],    #30 
+    [0x901A, 4,  "uint",  "Total charge count"], 
+    [0x901E, 2,  "uint",  "Dumb charge count (J2>7.1V for >=0.48s)"], 
+    [0x9020, 2,  "uint",  "Redlink (UART) charge count"], 
+    [0x9022, 2,  "uint",  "Completed charge count (?)"], 
+    [0x9024, 4,  "hhmmss","Total charging time (HH:MM:SS)"], 
+    [0x9028, 4,  "hhmmss","Time on charger whilst full (HH:MM:SS)"], 
+    [0x902C, 2,  "uint",  "Unknown (almost always 0)"], 
+    [0x902E, 2,  "uint",  "Charge started with a cell < 2.5V"], 
+    [0x9030, 2,  "uint",  "Unknown (discharge to empty?)"], 
+    [0x9032, 2,  "uint",  "Num. overheat on tool (must be > 10A)"],   #40
+    [0x9034, 2,  "uint",  "Unknown (overcurrent?)"], 
+    [0x9036, 2,  "uint",  "Soft overloads (trigger low voltage)"], 
+    [0x9038, 2,  "uint",  "Hard overloads (4 LEDs)"], 
+    [0x903A, 2,  "uint",  "Discharge @ 10-20A (seconds)"], 
+    [0x903C, 2,  "uint",  "          @ 20-30A (could be watts)"], 
+    [0x903E, 2,  "uint",  "          @ 30-40A      "], 
+    [0x9040, 2,  "uint",  "          @ 40-50A      "], 
+    [0x9042, 2,  "uint",  "          @ 50-60A      "], 
+    [0x9044, 2,  "uint",  "          @ 60-70A      "], 
+    [0x9046, 2,  "uint",  "          @ 70-80A      "],    #50
+    [0x9048, 2,  "uint",  "          @ 80-90A      "], 
+    [0x904A, 2,  "uint",  "          @ 90-100A     "], 
+    [0x904C, 2,  "uint",  "          @ 100-110A    "], 
+    [0x904E, 2,  "uint",  "          @ 110-120A    "], 
+    [0x9050, 2,  "uint",  "          @ 120-130A    "], 
+    [0x9052, 2,  "uint",  "          @ 130-140A    "], 
+    [0x9054, 2,  "uint",  "          @ 140-150A    "], 
+    [0x9056, 2,  "uint",  "          @ 150-160A    "], 
+    [0x9058, 2,  "uint",  "          @ 160-170A    "], 
+    [0x905A, 2,  "uint",  "          @ 170-180A    "],    #60
+    [0x905C, 2,  "uint",  "          @ 180-190A    "], 
+    [0x905E, 2,  "uint",  "          @ 190-200A    "], 
+    [0x9060, 2,  "uint",  "          @ 200-210A    "], 
+    [0x9062, 2,  "uint",  "Unknown (larger in lower Ah packs)"], 
+    [0x9064, 2,  "uint",  "Discharge @ 10-15A (seconds)"], 
+    [0x9066, 2,  "uint",  "          @ 15-20A (could be watts)"], 
+    [0x9068, 2,  "uint",  "          @ 20-25A      "], 
+    [0x906A, 2,  "uint",  "          @ 25-30A      "], 
+    [0x906C, 2,  "uint",  "          @ 30-35A      "], 
+    [0x906E, 2,  "uint",  "          @ 35-40A      "],    #70
+    [0x9070, 2,  "uint",  "          @ 40-45A      "], 
+    [0x9072, 2,  "uint",  "          @ 45-50A      "], 
+    [0x9074, 2,  "uint",  "          @ 50-55A      "], 
+    [0x9076, 2,  "uint",  "          @ 55-60A      "], 
+    [0x9078, 2,  "uint",  "          @ 60-65A      "], 
+    [0x907A, 2,  "uint",  "          @ 65-70A      "], 
+    [0x907C, 2,  "uint",  "          @ 70-65A      "], 
+    [0x907E, 2,  "uint",  "          @ 75-80A      "], 
+    [0x9080, 2,  "uint",  "          @ 80-85A      "], 
+    [0x9082, 2,  "uint",  "          @ 85-90A      "],    #80
+    [0x9084, 2,  "uint",  "          @ 90-95A      "], 
+    [0x9086, 2,  "uint",  "          @ 95-100A     "], 
+    [0x9088, 2,  "uint",  "          @ 100-105A    "], 
+    [0x908A, 2,  "uint",  "          @ 105-110A    "], 
+    [0x908C, 2,  "uint",  "          @ 110-115A    "], 
+    [0x908E, 2,  "uint",  "          @ 115-120A    "], 
+    [0x9090, 2,  "uint",  "          @ 120-125A    "], 
+    [0x9092, 2,  "uint",  "          @ 125-130A    "], 
+    [0x9094, 2,  "uint",  "          @ 130-135A    "], 
+    [0x9096, 2,  "uint",  "          @ 135-140A    "],    #90
+    [0x9098, 2,  "uint",  "          @ 140-145A    "], 
+    [0x909A, 2,  "uint",  "          @ 145-150A    "], 
+    [0x909C, 2,  "uint",  "          @ 150-155A    "], 
+    [0x909E, 2,  "uint",  "          @ 155-160A    "], 
+    [0x90A0, 2,  "uint",  "          @ 160-165A    "], 
+    [0x90A2, 2,  "uint",  "          @ 165-170A    "], 
+    [0x90A4, 2,  "uint",  "          @ 170-175A    "], 
+    [0x90A6, 2,  "uint",  "          @ 175-180A    "], 
+    [0x90A8, 2,  "uint",  "          @ 180-185A    "], 
+    [0x90AA, 2,  "uint",  "          @ 185-190A    "],    #100
+    [0x90AC, 2,  "uint",  "          @ 190-195A    "], 
+    [0x90AE, 2,  "uint",  "          @ 195-200A    "], 
+    [0x90B0, 2,  "uint",  "          @ 200A+       "], 
+    [0x90B2, 2,  "uint",  "Charge started < 17V"], 
+    [0x90B4, 2,  "uint",  "Charge started 17-18V"], 
+    [0x90B6, 2,  "uint",  "Charge started 18-19V"], 
+    [0x90B8, 2,  "uint",  "Charge started 19-20V"], 
+    [0x90BA, 2,  "uint",  "Charge started 20V+"], 
+    [0x90BC, 2,  "uint",  "Charge ended < 17V"], 
+    [0x90BE, 2,  "uint",  "Charge ended 17-18V"],         #110
+    [0x90C0, 2,  "uint",  "Charge ended 18-19V"],  
+    [0x90C2, 2,  "uint",  "Charge ended 19-20V"],  
+    [0x90C4, 2,  "uint",  "Charge ended 20V+"],
+    [0x90C6, 2,  "uint",  "Charge start temp -30C to -20C"], 
+    [0x90C8, 2,  "uint",  "Charge start temp -20C to -10C"], 
+    [0x90CA, 2,  "uint",  "Charge start temp -10C to 0C"],  
+    [0x90CC, 2,  "uint",  "Charge start temp 0C to +10C"],  
+    [0x90CE, 2,  "uint",  "Charge start temp +10C to +20C"],  
+    [0x90D0, 2,  "uint",  "Charge start temp +20C to +30C"], 
+    [0x90D2, 2,  "uint",  "Charge start temp +30C to +40C"],      #120
+    [0x90D4, 2,  "uint",  "Charge start temp +40C to +50C"],  
+    [0x90D6, 2,  "uint",  "Charge start temp +50C to +60C"], 
+    [0x90D8, 2,  "uint",  "Charge start temp +60C to +70C"],  
+    [0x90DA, 2,  "uint", "Charge start temp +70C to +80C"],  
+    [0x90DC, 2,  "uint",  "Charge start temp +80C and over"], 
+    [0x90DE, 2,  "uint",  "Charge end temp -30C to -20C"], 
+    [0x90E0, 2,  "uint",  "Charge end temp -20C to -10C"], 
+    [0x90E2, 2,  "uint",  "Charge end temp -10C to 0C"],  
+    [0x90E4, 2,  "uint",  "Charge end temp 0C to +10C"],  
+    [0x90E6, 2,  "uint",  "Charge end temp +10C to +20C"],         #130
+    [0x90E8, 2,  "uint",  "Charge end temp +30C to +30C"],
+    [0x90EA, 2,  "uint",  "Charge end temp +30C to +40C"],
+    [0x90EC, 2,  "uint",  "Charge end temp +40C to +50C"],
+    [0x90EE, 2,  "uint",  "Charge end temp +50C to +60C"],
+    [0x90F0, 2,  "uint",  "Charge end temp +60C to +70C"],
+    [0x90F2, 2,  "uint",  "Charge end temp +70C to +80C"],
+    [0x90F4, 2,  "uint",  "Charge end temp +80C and over"], 
+    [0x90F6, 2,  "uint",  "Dumb charge time (00:00-14:33)"], 
+    [0x90F8, 2,  "uint",  "Dumb charge time (14:34-29:07)"], 
+    [0x90FA, 2,  "uint",  "Dumb charge time (29:08-43:41)"],  #140
+    [0x90FC, 2,  "uint",  "Dumb charge time (43:42-58:15)"], 
+    [0x90FE, 2,  "uint",  "Dumb charge time (58:16-1:12:49)"], 
+    [0x9100, 2,  "uint",  "Dumb charge time (1:12:50-1:27:23)"], 
+    [0x9102, 2,  "uint",  "Dumb charge time (1:27:24-1:41:57)"], 
+    [0x9104, 2,  "uint",  "Dumb charge time (1:41:58-1:56:31)"], 
+    [0x9106, 2,  "uint",  "Dumb charge time (1:56:32-2:11:05)"], 
+    [0x9108, 2,  "uint",  "Dumb charge time (2:11:06-2:25:39)"], 
+    [0x910A, 2,  "uint",  "Dumb charge time (2:25:40-2:40:13)"], 
+    [0x910C, 2,  "uint",  "Dumb charge time (2:40:14-2:54:47)"], 
+    [0x910E, 2,  "uint",  "Dumb charge time (2:54:48-3:09:21)"],             #150
+    [0x9110, 2,  "uint",  "Dumb charge time (3:09:22-3:23:55)"], 
+    [0x9112, 2,  "uint",  "Redlink charge time (00:00-17:03)"], 
+    [0x9114, 2,  "uint",  "Redlink charge time (17:04-34:07)"], 
+    [0x9116, 2,  "uint",  "Redlink charge time (34:08-51:11)"], 
+    [0x9118, 2,  "uint",  "Redlink charge time (51:12-1:08:15)"], 
+    [0x911A, 2,  "uint",  "Redlink charge time (1:08:16-1:25:19)"], 
+    [0x911C, 2,  "uint",  "Redlink charge time (1:25:20-1:42:23)"], 
+    [0x911E, 2,  "uint",  "Redlink charge time (1:42:24-1:59:27)"], 
+    [0x9120, 2,  "uint",  "Redlink charge time (1:59:28-2:16:31)"], 
+    [0x9122, 2,  "uint",  "Redlink charge time (2:16:32-2:33:35)"],   #160 
+    [0x9124, 2,  "uint",  "Redlink charge time (2:33:36-2:50:39)"], 
+    [0x9126, 2,  "uint",  "Redlink charge time (2:50:40-3:07:43)"], 
+    [0x9128, 2,  "uint",  "Redlink charge time (3:07:44-3:24:47)"], 
+    [0x912A, 2,  "uint",  "Redlink charge time (3:24:48-3:41:51)"], 
+    [0x912C, 2,  "uint",  "Redlink charge time (3:41:52-3:58:55)"], 
+    [0x912E, 2,  "uint",  "Completed charge (?)"], 
+    [0x9130, 2,  "uint",  "Unknown"], 
+    [0x9132, 2,  "uint",  "Unknown"], 
+    [0x9134, 2,  "uint",  "Unknown"], 
+    [0x9136, 2,  "uint",  "Unknown"],       #170
+    [0x9138, 2,  "uint",  "Unknown"], 
+    [0x913A, 2,  "uint",  "Unknown"], 
+    [0x913C, 2,  "uint",  "Unknown"], 
+    [0x913E, 2,  "uint",  "Unknown"], 
+    [0x9140, 2,  "uint",  "Unknown"], 
+    [0x9142, 2,  "uint",  "Unknown"], 
+    [0x9144, 2,  "uint",  "Unknown"], 
+    [0x9146, 2,  "uint",  "Unknown"], 
+    [0x9148, 2,  "uint",  "Unknown (days of use?)"], 
+    [0x914A, 2,  "uint",  "Unknown"],       # 180
+    [0x914C, 2,  "uint",  "Unknown"], 
+    [0x914E, 2,  "uint",  "Unknown"], 
+    [0x9150, 2,  "uint",  "Unknown"],       #183
 ]
 
 
@@ -668,27 +675,27 @@ class M18:
                     data = response[3:(3+length)]
                                         
                     # process data according to type
-                    # (decimal, date, ascii, serial, adc_temp, dec_temp, cell_volts)
+                    # (uint, date, ascii, sn, adc_t, dec_t, cell_v)
                     match type:
-                        case "decimal":
+                        case "uint":
                             value = int.from_bytes(data, 'big')
                         case "date":
                             date_value = self.bytes2dt(data)
                             value = date_value.strftime('%Y-%m-%d %H:%M:%S')
-                        case "duration":
+                        case "hhmmss":
                             dur = int.from_bytes(data, 'big')
                             td = time.gmtime(dur)
                             value = time.strftime("%H:%M:%S", td)
                         case "ascii":
                             str = data.decode('utf-8')
                             value = f'\"{str}\"'
-                        case "serial":
+                        case "sn":
                             btype = int.from_bytes(data[0:2],'big')
                             serial = int.from_bytes(data[2:5],'big')
-                            value = f"Type: {btype:5d}, Serial: {serial:d}"
-                        case "adc_temp":
+                            value = f"Type: {btype:3d}, Serial: {serial:d}"
+                        case "adc_t":
                             value = self.calculate_temperature(int.from_bytes(data, 'big'))
-                        case "dec_temp":
+                        case "dec_t":
                             value = int.from_bytes(data[0], 'big') + int.from_bytes(data[1], 'big')/255
                         case "cell_v":
                             cv = [int.from_bytes(data[i:i+2], 'big') for i in range(0, 10, 2)]
@@ -698,7 +705,7 @@ class M18:
                     value = "------"
                 
                 # Print formatted data
-                print(f"{i:3d} 0x{addr:04X} {length:3d} {type:<10} {label:<39} {value:<}")
+                print(f"{i:3d} 0x{addr:04X} {length:2d} {type:>6}   {label:<39} {value:<}")
             
         except Excerption as e:
             print(f"read_id: Failed with error: {e}")
@@ -747,12 +754,17 @@ class M18:
 
     def help(self):
         print("Functions: \n \
+           DIAGNOSTICS: \n \
+           m.read_id() - print labelled and formatted diagnostics \n \
+           m.read_bat() - formatted print of all mapped registers\n \
+           m.read_all() - print all known registers in 0x01 command \n \
+           m.read_all_spreadsheet() - print registers in spreadsheet format \n \
+           \n \
+           CHARGING SIMULATION: \n \
            m.simulate() - simulate charging comms \n \
            m.simulate_for(t) - simulate for t seconds \n \
            m.high_for(t) - bring J2 high for t sec, then idle \n \
-           m.read_all() - print all known registers in 0x01 command \n \
-           m.read_all_spreadsheet() - print registers in spreadsheet format \n \
-           m.read_bat() - formatted print of all mapped registers\n \
+           \n \
            m.write_message(message) - write ascii string to 0x0023 register (20 chars)\n \
            \n \
            Debug: \n \
