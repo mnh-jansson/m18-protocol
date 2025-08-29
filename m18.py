@@ -96,8 +96,8 @@ data_id = [
     [0x9030, 2,  "uint",  "Unknown (discharge to empty?)"], 
     [0x9032, 2,  "uint",  "Num. overheat on tool (must be > 10A)"],   #40
     [0x9034, 2,  "uint",  "Unknown (overcurrent?)"], 
-    [0x9036, 2,  "uint",  "Soft overloads (trigger low voltage)"], 
-    [0x9038, 2,  "uint",  "Hard overloads (4 LEDs)"], 
+    [0x9036, 2,  "uint",  "Soft overloads (trip low voltage)"], 
+    [0x9038, 2,  "uint",  "Hard overloads (4 flashing LEDs)"], 
     [0x903A, 2,  "uint",  "Discharge @ 10-20A (seconds)"], 
     [0x903C, 2,  "uint",  "          @ 20-30A (could be watts)"], 
     [0x903E, 2,  "uint",  "          @ 30-40A      "], 
