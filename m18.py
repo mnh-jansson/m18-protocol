@@ -44,6 +44,197 @@ data_matrix = [
     [0xA0, 0x00, 0x06]
 ]
 
+
+# label, addr, len, type (decimal, date, ascii, serial, adc_temp, dec_temp, cell_volts)
+data_id = [
+    ["cell type",                               0x0000, 2, "decimal"], # 0
+    ["Unknown (always 0)",                      0x0002, 2, "decimal"],
+    ["Serial number (?)",                       0x0004, 5, "serial"],
+    ["Unknown (4th code?)",                     0x000D, 4, "decimal"],
+    ["Manufacture date",                        0x0011, 4, "date"],
+    ["Date of first charge (Forge)",            0x0015, 4, "date"],
+    ["Date of last charge (Forge)",             0x0019, 4, "date"],
+    ["Note",                                    0x0023, 20, "ascii"],
+    ["Current date",                            0x0037, 4, "date"],
+    ["Unknown (always 2)",                      0x0069, 2, "decimal"],
+    ["Unknown (always 0)",                      0x007B, 1, "decimal"], # 10
+    ["Unknown (Forge)",                         0x4000, 4, "decimal"],
+    ["Cell voltages (mV)",                      0x400A, 10, "cell_volts"],
+    ["Temperature (C) (non-Forge)",             0x4014, 2, "adc_temp"],
+    ["Unknown (Forge)",                         0x4016, 2, "decimal"],
+    ["Unknown (Forge)",                         0x4019, 2, "decimal"],
+    ["Unknown (Forge)",                         0x401B, 2, "decimal"],
+    ["Unknown (Forge)",                         0x401D, 2, "decimal"],
+    ["Temperature (C) (Forge)",                 0x401F, 2, "dec_temp"],
+    ["Unknown (Forge)",                         0x6000, 2, "decimal"],
+    ["Unknown (Forge)",                         0x6002, 2, "decimal"], # 20
+    ["Unknown (Forge)",                         0x6004, 4, "decimal"],
+    ["Unknown (Forge)",                         0x6008, 4, "decimal"],
+    ["Unknown (Forge)",                         0x600C, 2, "decimal"],
+    ["Date of first charge",                    0x9000, 4, "date"],
+    ["Date of last tool use",                   0x9004, 4, "date"],
+    ["Date of last charge",                     0x9008, 4, "date"],
+    ["Unknown date (often zero)",               0x900C, 4, "date"],
+    ["Days since first charge",                 0x9010, 2, "decimal"],
+    ["Total discharge (amp-sec)",               0x9012, 4, "decimal"],
+    ["Total discharge (watt-sec or joules)",    0x9016, 4, "decimal"], # 30
+    ["Total charge count",                      0x901A, 4, "decimal"],
+    ["Dumb charge count",                       0x901E, 2, "decimal"],
+    ["Redlink charge count",                    0x9020, 2, "decimal"],
+    ["Completed charge count",                  0x9022, 2, "decimal"],
+    ["Total charging time (sec)",               0x9024, 4, "duration"],
+    ["Time on charger whilst full (sec)",       0x9028, 4, "duration"],
+    ["Unknown (almost always 0)",               0x902C, 2, "decimal"],
+    ["Unknown (mostly 0)",                      0x902E, 2, "decimal"],
+    ["Unknown (discharge to empty?)",           0x9030, 2, "decimal"],
+    ["Unknown (usually zero)",                  0x9032, 2, "decimal"], # 40
+    ["Unknown (almost always 0. overcurrent?)", 0x9034, 2, "decimal"],
+    ["Unknown (related to full discharge)",     0x9036, 2, "decimal"],
+    ["Unknown",                                 0x9038, 2, "decimal"],
+    ["Discharge @ 10-20A (seconds)",            0x903A, 2, "decimal"],
+    ["          @ 20-30A          ",            0x903C, 2, "decimal"],
+    ["          @ 30-40A          ",            0x903E, 2, "decimal"],
+    ["          @ 40-50A          ",            0x9040, 2, "decimal"],
+    ["          @ 50-60A          ",            0x9042, 2, "decimal"],
+    ["          @ 60-70A          ",            0x9044, 2, "decimal"],
+    ["          @ 70-80A          ",            0x9046, 2, "decimal"], # 50
+    ["          @ 80-90A          ",            0x9048, 2, "decimal"],
+    ["          @ 90-100A         ",            0x904A, 2, "decimal"],
+    ["          @ 100-110A        ",            0x904C, 2, "decimal"],
+    ["          @ 110-120A        ",            0x904E, 2, "decimal"],
+    ["          @ 120-130A        ",            0x9050, 2, "decimal"],
+    ["          @ 130-140A        ",            0x9052, 2, "decimal"],
+    ["          @ 140-150A        ",            0x9054, 2, "decimal"],
+    ["          @ 150-160A        ",            0x9056, 2, "decimal"],
+    ["          @ 160-170A        ",            0x9058, 2, "decimal"],
+    ["          @ 170-180A        ",            0x905A, 2, "decimal"], # 60
+    ["          @ 180-190A        ",            0x905C, 2, "decimal"],
+    ["          @ 190-200A        ",            0x905E, 2, "decimal"],
+    ["          @ 200-210A        ",            0x9060, 2, "decimal"],
+    ["Unknown (larger in lower Ah packs)",      0x9062, 2, "decimal"],
+    ["Discharge @ 10-15A (seconds)",            0x9064, 2, "decimal"],
+    ["          @ 15-20A          ",            0x9066, 2, "decimal"],
+    ["          @ 20-25A          ",            0x9068, 2, "decimal"],
+    ["          @ 25-30A          ",            0x906A, 2, "decimal"],
+    ["          @ 30-35A          ",            0x906C, 2, "decimal"],
+    ["          @ 35-40A          ",            0x906E, 2, "decimal"], # 70
+    ["          @ 40-45A          ",            0x9070, 2, "decimal"],
+    ["          @ 45-50A          ",            0x9072, 2, "decimal"],
+    ["          @ 50-55A          ",            0x9074, 2, "decimal"],
+    ["          @ 55-60A          ",            0x9076, 2, "decimal"],
+    ["          @ 60-65A          ",            0x9078, 2, "decimal"],
+    ["          @ 65-70A          ",            0x907A, 2, "decimal"],
+    ["          @ 70-65A          ",            0x907C, 2, "decimal"],
+    ["          @ 75-80A          ",            0x907E, 2, "decimal"],
+    ["          @ 80-85A          ",            0x9080, 2, "decimal"],
+    ["          @ 85-90A          ",            0x9082, 2, "decimal"], # 80
+    ["          @ 90-95A          ",            0x9084, 2, "decimal"],
+    ["          @ 95-100A         ",            0x9086, 2, "decimal"],
+    ["          @ 100-105A        ",            0x9088, 2, "decimal"],
+    ["          @ 105-110A        ",            0x908A, 2, "decimal"],
+    ["          @ 110-115A        ",            0x908C, 2, "decimal"],
+    ["          @ 115-120A        ",            0x908E, 2, "decimal"],
+    ["          @ 120-125A        ",            0x9090, 2, "decimal"],
+    ["          @ 125-130A        ",            0x9092, 2, "decimal"],
+    ["          @ 130-135A        ",            0x9094, 2, "decimal"],
+    ["          @ 135-140A        ",            0x9096, 2, "decimal"], # 90
+    ["          @ 140-145A        ",            0x9098, 2, "decimal"],
+    ["          @ 145-150A        ",            0x909A, 2, "decimal"],
+    ["          @ 150-155A        ",            0x909C, 2, "decimal"],
+    ["          @ 155-160A        ",            0x909E, 2, "decimal"],
+    ["          @ 160-165A        ",            0x90A0, 2, "decimal"],
+    ["          @ 165-170A        ",            0x90A2, 2, "decimal"],
+    ["          @ 170-175A        ",            0x90A4, 2, "decimal"],
+    ["          @ 175-180A        ",            0x90A6, 2, "decimal"],
+    ["          @ 180-185A        ",            0x90A8, 2, "decimal"],
+    ["          @ 185-190A        ",            0x90AA, 2, "decimal"], # 100
+    ["          @ 190-195A        ",            0x90AC, 2, "decimal"],
+    ["          @ 195-200A        ",            0x90AE, 2, "decimal"],
+    ["          @ 200A+           ",            0x90B0, 2, "decimal"],
+    ["Unknown (discharge related?)",            0x90B2, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90B4, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90B6, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90B8, 2, "decimal"],
+    ["Unknown (put on charger when full?)",     0x90BA, 2, "decimal"],
+    ["Unknown (counter)",                       0x90BC, 2, "decimal"],
+    ["Unknown (counter)",                       0x90BE, 2, "decimal"],
+    ["Unknown (incomplete charges?)",           0x90C0, 2, "decimal"], # 110
+    ["Unknown (charge counter?)",               0x90C2, 2, "decimal"],
+    ["Unknown (charge finished?)",              0x90C4, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90C6, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90C8, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90CA, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90CC, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90CE, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90D0, 2, "decimal"],
+    ["Unknown (put on charger when full?)",     0x90D2, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90D4, 2, "decimal"], # 120
+    ["Unknown (charge counter?)",               0x90D6, 2, "decimal"],
+    ["Unknown (hot charge?)",                   0x90D8, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90DA, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90DC, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90DE, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90E0, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90E2, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90E4, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90E6, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90E8, 2, "decimal"], # 130
+    ["Unknown (put on charger when full?)",     0x90EA, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90EC, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90EE, 2, "decimal"],
+    ["Unknown (hot charge?)",                   0x90F0, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90F2, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x90F4, 2, "decimal"],
+    ["Dumb charge time (0-0:14:33)",            0x90F6, 2, "decimal"],
+    ["Dumb charge time (14:34-29:07)",          0x90F8, 2, "decimal"],
+    ["Dumb charge time (29:08-43:41)",          0x90FA, 2, "decimal"],
+    ["Dumb charge time (43:42-58:15)",          0x90FC, 2, "decimal"], # 140
+    ["Dumb charge time (58:16-1:12:49)",        0x90FE, 2, "decimal"],
+    ["Dumb charge time ()",                     0x9100, 2, "decimal"],
+    ["Dumb charge time ()",                     0x9102, 2, "decimal"],
+    ["Dumb charge time ()",                     0x9104, 2, "decimal"],
+    ["Dumb charge time ()",                     0x9106, 2, "decimal"],
+    ["Dumb charge time ()",                     0x9108, 2, "decimal"],
+    ["Dumb charge time ()",                     0x910A, 2, "decimal"],
+    ["Dumb charge time ()",                     0x910C, 2, "decimal"],
+    ["Dumb charge time ()",                     0x910E, 2, "decimal"],
+    ["Dumb charge time ()",                     0x9110, 2, "decimal"], # 150
+    ["Redlink charge time (0-17:03)",           0x9112, 2, "decimal"],
+    ["Redlink charge time (17:04-34:07)",       0x9114, 2, "decimal"],
+    ["Redlink charge time (34:08-51:11)",       0x9116, 2, "decimal"],
+    ["Redlink charge time (51:12-1:08:15)",     0x9118, 2, "decimal"],
+    ["Redlink charge time (1:08:16-1:25:19)",   0x911A, 2, "decimal"],
+    ["Redlink charge time (1:25:20-1:42:23)",   0x911C, 2, "decimal"],
+    ["Redlink charge time (1:42:24-1:59:27)",   0x911E, 2, "decimal"],
+    ["Redlink charge time (1:59:28-2:16:31)",   0x9120, 2, "decimal"],
+    ["Redlink charge time (2:16:32-2:33:35)",   0x9122, 2, "decimal"],
+    ["Redlink charge time (2:33:36-2:50:39)",   0x9124, 2, "decimal"], # 160
+    ["Redlink charge time (2:50:40-3:07:43)",   0x9126, 2, "decimal"],
+    ["Redlink charge time (3:07:44-3:24:47)",   0x9128, 2, "decimal"],
+    ["Redlink charge time (3:24:48-3:41:51)",   0x912A, 2, "decimal"],
+    ["Redlink charge time (3:41:52-3:58:55)",   0x912C, 2, "decimal"],
+    ["Unknown (completed charge?)",             0x912E, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9130, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9132, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9134, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9136, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9138, 2, "decimal"], # 170
+    ["Unknown (charge counter?)",               0x913A, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x913C, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x913E, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9140, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9142, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9144, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9146, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9148, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x914A, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x914C, 2, "decimal"], # 180
+    ["Unknown (charge counter?)",               0x914E, 2, "decimal"],
+    ["Unknown (charge counter?)",               0x9150, 2, "decimal"], # 182   
+]
+
+
+
 def print_debug_bytes(data):
     data_print = " ".join(f"{byte:02X}" for byte in data)
     print(f"DEBUG: ", data_print)
@@ -171,21 +362,34 @@ class M18:
     
     def simulate(self):
         print("Simulating charger communication")
+        
+        self.txrx_save_and_set(True) # Turn on TX/RX messages
+        
         self.reset()
-        print_debug_bytes(self.configure(2))
-        print_debug_bytes(self.get_snapchat())
+        #print_debug_bytes(self.configure(2))
+        #print_debug_bytes(self.get_snapchat())
+        #time.sleep(0.6)
+        #print_debug_bytes(self.keepalive())
+        #print_debug_bytes(self.configure(1))
+        #print_debug_bytes(self.get_snapchat())
+        
+        tmp = self.configure(2)
+        tmp = self.get_snapchat()
         time.sleep(0.6)
-        print_debug_bytes(self.keepalive())
-        print_debug_bytes(self.configure(1))
-        print_debug_bytes(self.get_snapchat())
+        tmp = self.keepalive()
+        tmp = self.configure(1)
+        tmp = self.get_snapchat()
         try:
             while True:
                 time.sleep(0.5)
-                print_debug_bytes(self.keepalive())
+                # print_debug_bytes(self.keepalive())
+                tmp = self.keepalive()
         except KeyboardInterrupt:
             print("\nSimulation aborted by user. Exiting gracefully...")
         finally:
             self.idle() 
+            
+        self.txrx_restore() # restore TX/RX print status
     
 
     def simulate_for(self, duration):
@@ -200,8 +404,8 @@ class M18:
         self.configure(1)
         self.get_snapchat()
         try:
-            start_time = time.time()
-            while (time.time() - start_time) < duration:
+            #start_time = time.time()
+            while (time.time() - begin_time) < duration:
                 time.sleep(0.5)
                 self.keepalive()
         except KeyboardInterrupt:
@@ -424,7 +628,75 @@ class M18:
             self.idle()
         except Exception as e:
             print(f"read_all: Failed with error: {e}")
+    
+
+    # read data by ID. Default is print all
+    def read_id(self, id_array = [] ):
+        # If empty, default is print all
+        if ( len(id_array) == 0 ):
+            id_array = range(0,len(data_id))
+        
+        try:
+            self.reset()
+            # Do dummy read to update 0x9000 data
+            for addr_h, addr_l, length in data_matrix:
+                response = self.cmd(addr_h, addr_l, length, (length + 5))
+            self.idle()
+            time.sleep(0.1)
             
+            # Add date to top
+            now = datetime.datetime.now()
+            formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
+            print(formatted_time)            
+            print("ID  ADDR   LEN TYPE       LABEL                                   VALUE")
+            
+            self.reset()
+            for i in id_array:
+                addr = data_id[i][1]
+                addr_h = (addr >> 8) & 0xFF # separate upper 8-bits of addr
+                addr_l = addr & 0xFF # separate lower 8-bits of addr
+                length = data_id[i][2]
+                type = data_id[i][3]
+                label = data_id[i][0]
+
+                response = self.cmd(addr_h, addr_l, length, (length + 5))
+                if response and len(response) >= 4 and response[0] == 0x81:
+                    # extract payload. message without header and cksum
+                    data = response[3:(3+length)]
+                                        
+                    # process data according to type
+                    # (decimal, date, ascii, serial, adc_temp, dec_temp, cell_volts)
+                    match type:
+                        case "decimal":
+                            value = int.from_bytes(data, 'big')
+                        case "date":
+                            date_value = self.bytes2dt(data)
+                            value = date_value.strftime('%Y-%m-%d %H:%M:%S')
+                        case "ascii":
+                            str = data.decode('utf-8')
+                            value = f'\"{str}\"'
+                        case "serial":
+                            btype = int.from_bytes(data[0:2],'big')
+                            serial = int.from_bytes(data[2:5],'big')
+                            value = f"Type: {btype:5d}, Serial: {serial:d}"
+                        case "adc_temp":
+                            value = self.calculate_temperature(int.from_bytes(data, 'big'))
+                        case "dec_temp":
+                            value = int.from_bytes(data[0], 'big') + int.from_bytes(data[1], 'big')/255
+                        case "cell_volts":
+                            cv = [int.from_bytes(data[i:i+2], 'big') for i in range(0, 10, 2)]
+                            value = f"1: {cv[0]:4d}, 2: {cv[1]:4d}, 3: {cv[2]:4d}, 4: {cv[3]:4d}, 5: {cv[4]:4d}"
+                   
+                else:
+                    value = "------"
+                
+                # Print formatted data
+                print(f"{i:3d} 0x{addr:04X} {length:3d} {type:<10} {label:<39} {value:<}")
+            
+        except Excerption as e:
+            print(f"read_id: Failed with error: {e}")
+
+    
     def read_all_spreadsheet(self):
         try:
             self.reset()
