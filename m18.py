@@ -684,8 +684,9 @@ class M18:
                             value = date_value.strftime('%Y-%m-%d %H:%M:%S')
                         case "hhmmss":
                             dur = int.from_bytes(data, 'big')
-                            td = time.gmtime(dur)
-                            value = time.strftime("%H:%M:%S", td)
+                            mm, ss = divmod(dur, 60)
+                            hh, mm = divmod(mm, 60)
+                            value = f"{hh}:{mm}:{ss}"
                         case "ascii":
                             str = data.decode('utf-8')
                             value = f'\"{str}\"'
@@ -696,7 +697,8 @@ class M18:
                         case "adc_t":
                             value = self.calculate_temperature(int.from_bytes(data, 'big'))
                         case "dec_t":
-                            value = int.from_bytes(data[0], 'big') + int.from_bytes(data[1], 'big')/255
+                            temp = data[0] + data[1]/256
+                            value = f"{temp:.2f}"
                         case "cell_v":
                             cv = [int.from_bytes(data[i:i+2], 'big') for i in range(0, 10, 2)]
                             value = f"1: {cv[0]:4d}, 2: {cv[1]:4d}, 3: {cv[2]:4d}, 4: {cv[3]:4d}, 5: {cv[4]:4d}"
@@ -707,7 +709,7 @@ class M18:
                 # Print formatted data
                 print(f"{i:3d} 0x{addr:04X} {length:2d} {type:>6}   {label:<39} {value:<}")
             
-        except Excerption as e:
+        except Exception as e:
             print(f"read_id: Failed with error: {e}")
 
     
