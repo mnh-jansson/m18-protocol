@@ -641,24 +641,30 @@ class M18:
     
 
     # read data by ID. Default is print all
-    def read_id(self, id_array = [] ):
+    # id_array - array of registers to print
+    # force_refresh - force a read of all registers to ensure they're up to date
+    # ss_format - spreadsheet format (print values only)
+    def read_id(self, id_array = [], force_refresh=True, ss_format=False ):
         # If empty, default is print all
         if ( len(id_array) == 0 ):
             id_array = range(0,len(data_id))
         
         try:
             self.reset()
-            # Do dummy read to update 0x9000 data
-            for addr_h, addr_l, length in data_matrix:
-                response = self.cmd(addr_h, addr_l, length, (length + 5))
-            self.idle()
-            time.sleep(0.1)
+            
+            if (force_refresh):
+                # Do dummy read to update 0x9000 data
+                for addr_h, addr_l, length in data_matrix:
+                    response = self.cmd(addr_h, addr_l, length, (length + 5))
+                self.idle()
+                time.sleep(0.1)
             
             # Add date to top
             now = datetime.datetime.now()
             formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
-            print(formatted_time)            
-            print("ID  ADDR   LEN TYPE       LABEL                                   VALUE")
+            print(formatted_time)
+            if ( ss_format == False ):
+                print("ID  ADDR   LEN TYPE       LABEL                                   VALUE")
             
             self.reset()
             for i in id_array:
@@ -706,8 +712,12 @@ class M18:
                 else:
                     value = "------"
                 
-                # Print formatted data
-                print(f"{i:3d} 0x{addr:04X} {length:2d} {type:>6}   {label:<39} {value:<}")
+                if( ss_format ):
+                    # Print spreadsheet format
+                    print(value)
+                else:
+                    # Print formatted data
+                    print(f"{i:3d} 0x{addr:04X} {length:2d} {type:>6}   {label:<39} {value:<}")
             
         except Exception as e:
             print(f"read_id: Failed with error: {e}")
