@@ -1,5 +1,6 @@
 
 import serial
+from serial.tools import list_ports
 import time, struct, code
 import argparse
 import datetime
@@ -283,6 +284,32 @@ class M18:
             
 
     def __init__(self, port):
+        if( port is None ):
+            print("*** NO PORT SPECIFIED ***")
+            print("Available serial ports (choose one that says USB somewhere):")
+            ports = list_ports.comports()
+            
+            i = 1
+            for p in ports:
+                print(f"  {i}: {p.device} - {p.manufacturer} - {p.description}")
+                i = i+1
+            
+            port_id = 0
+            while( (port_id < 1) or (port_id >= i) ):
+                user_port = input(f"Choose a port (1-{i-1}): ")
+                try:
+                    port_id = int(user_port)
+                except ValueError:
+                    print("Invalid input. Please enter a number")
+                
+            p = ports[port_id - 1]
+            print(f"You selected \"{p.device} - {p.manufacturer} - {p.description}\"")
+            print(f"In future, use \"m18.py --port {p.device}\" to avoid this menu")
+            input("Press Enter to continue")
+            
+            port = p.device
+            
+            
         self.port = serial.Serial(port, baudrate=4800, timeout=0.8, stopbits=2)
         self.idle()
 
@@ -799,14 +826,17 @@ class M18:
            m.calibrate() - calibration/interrupt command (0x55) \n \
            m.keepalive() - send charge current request (0x62) \n \
            \n \
-           m.help() - this message\n") 
+           m.help() - this message\n \
+           \n \
+           exit() - end program\n") 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="M18 Protocol Interface",
         epilog="Connect UART-TX to M18-J2 and UART-RX to M18-J1 to fake the charger and UART-GND to M18-GND")
-    parser.add_argument('--port', type=str, help="Serial port to connect to (e.g., COM5)", default = "/dev/ttyUSB0")
+    #parser.add_argument('--port', type=str, help="Serial port to connect to (e.g., COM5)", default = "/dev/ttyUSB0")
+    parser.add_argument('--port', type=str, help="Serial port to connect to (e.g., COM5)")
     args = parser.parse_args()
 
     m = M18(args.port)
