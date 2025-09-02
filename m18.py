@@ -314,6 +314,18 @@ class M18:
         self.idle()
 
     def reset(self):
+        """
+        Reset the connected device via the serial port.
+
+        This method toggles the `break_condition` and `DTR` signals on the
+        serial port to force the device into a reset state. Afterward, it
+        sends the synchronization byte (`SYNC_BYTE`) and waits for a
+        matching response. This is used for automatic baudrate detection.
+
+        Returns:
+            bool: True if the device responded with the expected sync byte,
+                False otherwise.
+        """
         self.ACC = 4
         self.port.break_condition = True
         self.port.dtr = True
@@ -403,24 +415,17 @@ class M18:
         self.txrx_save_and_set(True) # Turn on TX/RX messages
         
         self.reset()
-        #print_debug_bytes(self.configure(2))
-        #print_debug_bytes(self.get_snapchat())
-        #time.sleep(0.6)
-        #print_debug_bytes(self.keepalive())
-        #print_debug_bytes(self.configure(1))
-        #print_debug_bytes(self.get_snapchat())
         
-        tmp = self.configure(2)
-        tmp = self.get_snapchat()
+        self.configure(2)
+        self.get_snapchat()
         time.sleep(0.6)
-        tmp = self.keepalive()
-        tmp = self.configure(1)
-        tmp = self.get_snapchat()
+        self.keepalive()
+        self.configure(1)
+        self.get_snapchat()
         try:
             while True:
                 time.sleep(0.5)
-                # print_debug_bytes(self.keepalive())
-                tmp = self.keepalive()
+                self.keepalive()
         except KeyboardInterrupt:
             print("\nSimulation aborted by user. Exiting gracefully...")
         finally:
@@ -502,9 +507,17 @@ class M18:
         finally:
             self.idle() 
 
-    def full_brute(self, start=0, stop=0xFFFF, len = 0xFF):        
-    # query every address by calling 'brute()' from 'start' to 'stop'
-    # 'len' should be 0x01 to 0xFF. 0x0A is a good value that should find all registers
+    def full_brute(self, start=0, stop=0xFFFF, len = 0xFF):
+        """
+        Perform a brute-force query across all register addresses.
+
+        Iterates from `start` to `stop` (exclusive) and calls
+        `self.brute(msb, lsb, length, 0x01)` for each address.
+        The method splits the 16-bit address into its MSB and LSB
+        before passing it along. Progress is printed every 256
+        addresses.
+        """       
+    
         try:
             for addr in range(start, stop): 
                 msb = (addr >> 8) & 0xFF # separate upper 8-bits of addr
@@ -521,29 +534,6 @@ class M18:
     def wcmd(self, a,b,c,length):
         self.send_command(struct.pack('>BBBBBB', 0x01, 0x05, 0x03, a, b, c))
         return self.read_response(length)
-    
-    def wdebug(self, a,b,c,length):
-        self.reset()
-        data = self.wcmd(a,b,c,length)
-        data_print = " ".join(f"{byte:02X}" for byte in data)
-        print(f"Response from: 0x{(a * 0x100 + b):04X}:", data_print)
-        self.idle()
-    
-    def wbrute(self, start=0):
-        upper = start >> 8 & 0xff
-        lower = start & 0xff
-        self.reset()
-        try:
-            for a in range(upper, 0xff): 
-                for b in range(lower, 0xff): 
-                    ret = self.wcmd(a, b, 2, 2+5)
-                    if ret[0] == 0x80:
-                        data_print = " ".join(f"{byte:02X}" for byte in ret)
-                        print(f"Valid write at: 0x{(a * 0x100 + b):04X}: ", data_print)
-        except KeyboardInterrupt:
-            print("\nSimulation aborted by user. Exiting gracefully...")
-        finally:
-            self.idle() 
 
     def write_message(self, message):
         try:
@@ -572,6 +562,11 @@ class M18:
         self.idle()
 
     def calculate_temperature(self, adc_value):
+        """
+        Convert an ADC reading into a temperature estimate.
+
+        The constants used here are only estimated.
+        """
         R1 = 10e3  # 10k ohm
         R2 = 20e3  # 20k ohm
         T1 = 50    # 50°C
@@ -588,68 +583,12 @@ class M18:
 
         return round(temperature, 2)
 
-    def read_clock(self):
-        try:
-            while True:
-                self.reset()
-                time_data = self.cmd(0x00, 0x37, 0x4, (0x4 + 5))
-                dt = self.bytes2dt(time_data[3:7])
-                print(f"Internal time: {dt.strftime('%Y-%m-%d %H:%M:%S')}")
-                time.sleep(1)
-        except KeyboardInterrupt:
-            print("\nRead aborted by user. Exiting gracefully...")
-        except Exception as e:
-            print(f"read_clock: Failed with error: {e}")
-        finally:
-            self.idle() 
-
     def bytes2dt(self, time_bytes):
         epoch_time = int.from_bytes(time_bytes, 'big')
         dt = datetime.datetime.fromtimestamp(epoch_time, tz=datetime.UTC)
         return dt
 
-    def read_bat(self):
         
-        # turn off debugging messages
-        self.txrx_save_and_set(False)
-        
-        try:
-            self.reset()
-            voltage_data = self.cmd(0x40, 0x0a, 0x0a, (0x0a + 5)) # read all voltages
-            temp_data = self.cmd(0x40, 0x14, 0x2, (0x2 + 5))
-            ram_data = self.cmd(0x90, 0x0a, 0x3b, (0x3b + 5))
-            mfg_time_data = self.cmd(0x00, 0x11, 0x4, (0x4 + 5))
-            now_data = self.cmd(0x00, 0x37, 0x4, (0x4 + 5))
-            bytes_message = self.cmd(0x00, 0x23, 0x14, (0x14 + 5))
-            self.idle()
-
-            voltage_data = voltage_data[3:]
-
-            cell_voltages = [int.from_bytes(voltage_data[i:i+2], 'big') / 1000 for i in range(0, 10, 2)]
-            for i, voltage in enumerate(cell_voltages, start=1):
-                print(f"Cell {i}: {voltage:.3f}V")
-
-            days = (ram_data[9]<<8) + ram_data[10]
-            num_charges = (ram_data[21]<<8) + ram_data[22]
-            temp_adc = int.from_bytes(temp_data[3:5], 'big')
-            temp = self.calculate_temperature(temp_adc)
-            mfg_dt = self.bytes2dt(mfg_time_data[3:7])
-            now_dt = self.bytes2dt(now_data[3:7])
-            string = bytes_message[3:23].decode('utf-8')
-
-            print(f"\nCell temperature: {temp}°C")
-            print(f"Number of charges: {num_charges}")
-            print(f"Internal clock: {now_dt.strftime('%Y-%m-%d %H:%M:%S')}")
-            print(f"Days since first charge: {days}")
-            print(f"Date of manufacturing: {mfg_dt.strftime('%Y-%m-%d %H:%M:%S')}")
-            print(f"Message: {string}")
-        except Exception as e:
-            print(f"read_bat: Failed with error: {e}")
-            
-        # restore debug status
-        self.txrx_restore()
-        
-
     def read_all(self):
         try:
             self.reset()
@@ -667,11 +606,13 @@ class M18:
             print(f"read_all: Failed with error: {e}")
     
 
-    # read data by ID. Default is print all
-    # id_array - array of registers to print
-    # force_refresh - force a read of all registers to ensure they're up to date
-    # ss_format - spreadsheet format (print values only)
     def read_id(self, id_array = [], force_refresh=True, ss_format=False ):
+        """
+        Read data by ID. Default is print all
+        # id_array - array of registers to print
+        # force_refresh - force a read of all registers to ensure they're up to date
+        # ss_format - spreadsheet format (print values only)
+        """
         # If empty, default is print all
         if ( len(id_array) == 0 ):
             id_array = range(0,len(data_id))
@@ -795,7 +736,6 @@ class M18:
         print("Functions: \n \
            DIAGNOSTICS: \n \
            m.read_id() - print labelled and formatted diagnostics \n \
-           m.read_bat() - formatted print of all mapped registers\n \
            m.read_all() - print all known registers in 0x01 command \n \
            m.read_all_spreadsheet() - print registers in spreadsheet format \n \
            \n \
@@ -835,7 +775,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="M18 Protocol Interface",
         epilog="Connect UART-TX to M18-J2 and UART-RX to M18-J1 to fake the charger and UART-GND to M18-GND")
-    #parser.add_argument('--port', type=str, help="Serial port to connect to (e.g., COM5)", default = "/dev/ttyUSB0")
     parser.add_argument('--port', type=str, help="Serial port to connect to (e.g., COM5)")
     args = parser.parse_args()
 
