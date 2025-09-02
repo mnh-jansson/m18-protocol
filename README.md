@@ -2,9 +2,9 @@
 
 This repository contains research about the Milwaukee M18 protocol.
 
-First step is to fake the charger commands in order to verify that the communication works as expected.
+First step was to fake the charger commands in order to verify that the communication works as expected.
 
-Next step is figuring out what other commands are supported.
+Next step was figuring out what other commands are supported.
 
 ## Hardware
 
