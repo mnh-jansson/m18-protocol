@@ -750,6 +750,93 @@ class M18:
             self.idle()
         except Exception as e:
             print(f"read_all_spreadsheet: Failed with error: {e}")
+            
+    
+    def health(self):
+        """
+        Print labelled and formatted summary of key data.
+        Some data is calculated, like 'imbalance' and 'total time on tool'
+        Print simple histogram of discharge stats
+        """
+        reg_list = [
+            4,  # 0.  Manufacture date
+            28, # 1.  Days since first charge
+            25, # 2.  Days since last tool use (corrected for current time)
+            26, # 3.  Days since last charge (corrected for current time)
+            12, # 4.  Voltages and imbalance
+            13, # 5.  temp (non-forge)
+            18, # 6.  temp (forge)
+            29, # 7.  Total discharge (Ah)
+            39, # 8.  Discharged to empty (count)
+            40, # 9.  Overheat events
+            41, # 10. Overcurrent events
+            42, # 11. Low-voltage events
+            43, # 12. Low-voltage bounce
+            33, 32, 31, # 13, 14, 15. Redlink, dumb, total charge count
+            35, # 16. Total charge time
+            36, # 17. Time idling on charger
+            38  # 18. Low-voltage charges (any cell <2.5V)
+        ] 
+        reg_list += range(44,64) # 19-38. discharge buckets (10-20A, 20-30A, ..., 200A+)
+        reg_list += [8] # 39. System date
+        
+        
+        # turn off debugging messages
+        self.txrx_save_and_set(False)
+        
+        try:
+            print("Reading battery. This will take 5-10sec")
+            array = self.read_id(reg_list, True, "array")
+            
+            #now = datetime.datetime.now(datetime.timezone.utc)
+            bat_now = array[39][1]
+            
+            #print("Manufacture date: ", array[0].strftime('%Y-%m-%d %H:%M:%S') )
+            print("Manufacture date:", array[0][1].strftime('%Y-%m-%d') )
+            print("Days since 1st charge:", array[1][1])
+            print("Days since last tool use:", (bat_now - array[2][1]).days )
+            print("Days since last charge:", (bat_now - array[3][1]).days )
+            print("Voltages (mV):", array[4][1] )
+            print("Imbalance (mV):", max(array[4][1]) - min(array[4][1]) )
+            if( array[5][1] ):
+                print("Temperature (deg C):", array[5][1])
+            if( array[6][1] ):
+                print("Temperature (deg C):", array[6][1])
+            
+            print(f"Charge count [Redlink, dumb, (total)]: {(array[13][1])}, {(array[14][1])}, ({(array[15][1])})")
+            print("Total charge time:", array[16][1])
+            print("Time idling on charger:", array[17][1])
+            print("Low-voltage charges (any cell <2.5V):", array[18][1])
+            
+            print("Total discharge (Ah):", f"{array[7][1]/3600:.2f}")
+            print("Times discharged to empty:", array[8][1])
+            print("Times overheated:", array[9][1])
+            print("Overcurrent events:", array[10][1])
+            print("Low-voltage events:", array[11][1])
+            print("Low-voltage bounce/stutter:", array[12][1])
+            
+            tool_time = 0
+            for i in range(19,39):
+                tool_time += array[i][1]
+                
+            print("Total time on tool (>10A):", datetime.timedelta(seconds=tool_time))
+                
+            for i,j in enumerate(range(19,39)):
+                amp_range = f"{(i+1)*10}-{(i+2)*10}A"
+                label = f"Time @ {amp_range:>8}:"
+                t = array[j][1]
+                hhmmss = datetime.timedelta(seconds=t)
+                pct = round( (t/tool_time)*100 )
+                bar = "X" * round(pct)
+                print(label, hhmmss, f"{pct:2d}%", bar)
+                
+        except Exception as e:
+            print(f"health: Failed with error: {e}")
+            
+        # restore debug status
+        self.txrx_restore()
+    
+    
 
     def help(self):
         print("Functions: \n \
