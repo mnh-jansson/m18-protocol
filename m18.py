@@ -606,16 +606,25 @@ class M18:
             print(f"read_all: Failed with error: {e}")
     
 
-    def read_id(self, id_array = [], force_refresh=True, ss_format=False ):
+    def read_id(self, id_array = [], force_refresh=True, output="label"):
         """
         Read data by ID. Default is print all
         # id_array - array of registers to print
         # force_refresh - force a read of all registers to ensure they're up to date
-        # ss_format - spreadsheet format (print values only)
+        # output - ["label" | "raw" | "array"]
+        #       "label" - prints labelled registers to stdout
+        #       "raw" - prints values only (for pasting into spreadsheet)
+        #       "array" - returns array of [id, value]
         """
         # If empty, default is print all
         if ( len(id_array) == 0 ):
             id_array = range(0,len(data_id))
+            
+        if not ( (output == "label") or (output == "raw") or (output == "array") ):
+            print(f"Unrecognised 'output' = {output}. Please choose \"label\", \"raw\", or \"array\"")
+            output = "label"
+            
+        array = []
         
         try:
             self.reset()
@@ -630,9 +639,12 @@ class M18:
             # Add date to top
             now = datetime.datetime.now()
             formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
-            print(formatted_time)
-            if ( ss_format == False ):
+            if ( output == "label" ):
+                print(formatted_time)
                 print("ID  ADDR   LEN TYPE       LABEL                                   VALUE")
+            elif ( output == "raw" ):
+                print(formatted_time)
+            
             
             self.reset()
             for i in id_array:
@@ -652,40 +664,47 @@ class M18:
                     # (uint, date, ascii, sn, adc_t, dec_t, cell_v)
                     match type:
                         case "uint":
-                            value = int.from_bytes(data, 'big')
+                            array_value = value = int.from_bytes(data, 'big')
                         case "date":
-                            date_value = self.bytes2dt(data)
-                            value = date_value.strftime('%Y-%m-%d %H:%M:%S')
+                            array_value = self.bytes2dt(data)
+                            value = array_value.strftime('%Y-%m-%d %H:%M:%S')
                         case "hhmmss":
                             dur = int.from_bytes(data, 'big')
                             mm, ss = divmod(dur, 60)
                             hh, mm = divmod(mm, 60)
-                            value = f"{hh}:{mm}:{ss}"
+                            array_value = value = f"{hh}:{mm:02d}:{ss:02d}"
                         case "ascii":
                             str = data.decode('utf-8')
-                            value = f'\"{str}\"'
+                            array_value = value = f'\"{str}\"'
                         case "sn":
                             btype = int.from_bytes(data[0:2],'big')
                             serial = int.from_bytes(data[2:5],'big')
-                            value = f"Type: {btype:3d}, Serial: {serial:d}"
+                            array_value = value = f"Type: {btype:3d}, Serial: {serial:d}"
                         case "adc_t":
-                            value = self.calculate_temperature(int.from_bytes(data, 'big'))
+                            array_value = value = self.calculate_temperature(int.from_bytes(data, 'big'))
                         case "dec_t":
                             temp = data[0] + data[1]/256
-                            value = f"{temp:.2f}"
+                            array_value = value = f"{temp:.2f}"
                         case "cell_v":
-                            cv = [int.from_bytes(data[i:i+2], 'big') for i in range(0, 10, 2)]
+                            array_value = cv = [int.from_bytes(data[i:i+2], 'big') for i in range(0, 10, 2)]
                             value = f"1: {cv[0]:4d}, 2: {cv[1]:4d}, 3: {cv[2]:4d}, 4: {cv[3]:4d}, 5: {cv[4]:4d}"
                    
                 else:
+                    array_value = None
                     value = "------"
                 
-                if( ss_format ):
-                    # Print spreadsheet format
-                    print(value)
-                else:
+                if( output == "label" ):
                     # Print formatted data
                     print(f"{i:3d} 0x{addr:04X} {length:2d} {type:>6}   {label:<39} {value:<}")
+                elif( output == "raw" ):
+                    # Print spreadsheet format
+                    print(value)
+                elif( output == "array" ):
+                    array.append([i, array_value])
+                    
+            if( output == "array" and array ):        
+                return array
+                    
             
         except Exception as e:
             print(f"read_id: Failed with error: {e}")
