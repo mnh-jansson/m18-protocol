@@ -901,7 +901,9 @@ class M18:
             print("submit_form: No output returned, aborting")
         s_output = "\n".join(map(str, output))
 
+
         # Prompt the user for each field
+        print("Please provide this information. All the values can be found on the label under the battery.")
         one_key_id = input("Enter One-Key ID (example: H18FDCAD): ")
         date = input("Enter Date (example: 190316): ")
         serial_number = input("Enter Serial number (example: 0807426): ")
