@@ -5,6 +5,7 @@ import time, struct, code
 import argparse
 import datetime
 import math
+import re
 try:
     import readline
 except ImportError:
@@ -705,7 +706,7 @@ class M18:
             if( output == "array" and array ):        
                 return array
                     
-            
+            self.idle()
         except Exception as e:
             print(f"read_id: Failed with error: {e}")
 
@@ -778,15 +779,37 @@ class M18:
             38  # 18. Low-voltage charges (any cell <2.5V)
         ] 
         reg_list += range(44,64) # 19-38. discharge buckets (10-20A, 20-30A, ..., 200A+)
-        reg_list += [8] # 39. System date
+        reg_list += [
+            8,  # 39. System date
+            2   # 40. type & serial
+        ] 
         
         
         # turn off debugging messages
         self.txrx_save_and_set(False)
         
         try:
-            print("Reading battery. This will take 5-10sec")
+            print("Reading battery. This will take 5-10sec\n")
             array = self.read_id(reg_list, True, "array")
+            
+            sn = array[40][1]
+            numbers = re.findall(r'\d+\.?\d*', sn)
+            bat_type = numbers[0]
+            e_serial = numbers[1]
+            bat_lookup = {
+                "37": "2Ah CP (5s1p 18650)",
+                "40": "5Ah XC (5s2p 18650)",
+                "165": "5Ah XC (5s2p 18650)",
+                "46": "6Ah XC (5s2p 18650)",
+                "104": "3Ah HO (5s1p 21700)",
+                "106": "6Ah HO (5s2p 21700)",
+                "107": "8Ah HO (5s2p 21700)",
+                "108": "12Ah HO (5s3p 21700)",
+                "384": "12Ah Forge (5s3p 21700 tabless)"
+            }
+            bat_text = bat_lookup.get(bat_type, "Unknown")
+            print(f"Type: {bat_type} [{bat_text}]")
+            print("E-serial:", e_serial, "(does NOT match case serial)")
             
             #now = datetime.datetime.now(datetime.timezone.utc)
             bat_now = array[39][1]
@@ -796,18 +819,21 @@ class M18:
             print("Days since 1st charge:", array[1][1])
             print("Days since last tool use:", (bat_now - array[2][1]).days )
             print("Days since last charge:", (bat_now - array[3][1]).days )
-            print("Voltages (mV):", array[4][1] )
-            print("Imbalance (mV):", max(array[4][1]) - min(array[4][1]) )
+            print("Pack voltage:", sum(array[4][1])/1000 )
+            print("Cell Voltages (mV):", array[4][1] )
+            print("Cell Imbalance (mV):", max(array[4][1]) - min(array[4][1]) )
             if( array[5][1] ):
                 print("Temperature (deg C):", array[5][1])
             if( array[6][1] ):
                 print("Temperature (deg C):", array[6][1])
             
+            print("\nCHARGING STATS:")
             print(f"Charge count [Redlink, dumb, (total)]: {(array[13][1])}, {(array[14][1])}, ({(array[15][1])})")
             print("Total charge time:", array[16][1])
             print("Time idling on charger:", array[17][1])
             print("Low-voltage charges (any cell <2.5V):", array[18][1])
             
+            print("\nTOOL USE STATS:")
             print("Total discharge (Ah):", f"{array[7][1]/3600:.2f}")
             print("Times discharged to empty:", array[8][1])
             print("Times overheated:", array[9][1])
@@ -821,7 +847,7 @@ class M18:
                 
             print("Total time on tool (>10A):", datetime.timedelta(seconds=tool_time))
                 
-            for i,j in enumerate(range(19,39)):
+            for i,j in enumerate(range(19,38)):
                 amp_range = f"{(i+1)*10}-{(i+2)*10}A"
                 label = f"Time @ {amp_range:>8}:"
                 t = array[j][1]
@@ -829,9 +855,19 @@ class M18:
                 pct = round( (t/tool_time)*100 )
                 bar = "X" * round(pct)
                 print(label, hhmmss, f"{pct:2d}%", bar)
+            # Do last label different
+            j += 1
+            amp_range = f"> 200A"
+            label = f"Time @ {amp_range:>8}:"
+            t = array[j][1]
+            hhmmss = datetime.timedelta(seconds=t)
+            pct = round( (t/tool_time)*100 )
+            bar = "X" * round(pct)
+            print(label, hhmmss, f"{pct:2d}%", bar)
                 
         except Exception as e:
             print(f"health: Failed with error: {e}")
+            print("Check battery is connected and you have correct serial port")
             
         # restore debug status
         self.txrx_restore()
@@ -840,41 +876,45 @@ class M18:
 
     def help(self):
         print("Functions: \n \
-           DIAGNOSTICS: \n \
-           m.read_id() - print labelled and formatted diagnostics \n \
-           m.read_all() - print all known registers in 0x01 command \n \
-           m.read_all_spreadsheet() - print registers in spreadsheet format \n \
-           \n \
-           CHARGING SIMULATION: \n \
-           m.simulate() - simulate charging comms \n \
-           m.simulate_for(t) - simulate for t seconds \n \
-           m.high_for(t) - bring J2 high for t sec, then idle \n \
-           \n \
-           m.write_message(message) - write ascii string to 0x0023 register (20 chars)\n \
-           \n \
-           Debug: \n \
-           m.PRINT_TX = True - boolean to enable TX messages \n \
-           m.PRINT_RX = True - boolean to enable RX messages \n \
-           m.txrx_print(bool) - set PRINT_TX & RX to bool \n \
-           m.txrx_save_and_set(bool) - save PRINT_TX & RX state, then set both to bool \n \
-           m.txrx_restore() - restore PRINT_TX & RX to saved values \n \
-           m.brute(addr_msb, addr_lsb) \n \
-           m.full_brute(start, stop, len) - check registers from 'start' to 'stop'. look for 'len' bytes \n \
-           m.debug(addr_msb, addr_lsb, len, rsp_len) - send reset() then cmd() to battery \n \
-           m.try_cmd(cmd, addr_h, addr_l, len) - try 'cmd' at [addr_h addr_l] with 'len' bytes \n \
-           \n \
-           Internal:\n \
-           m.high() - bring J2 pin high (20V)\n \
-           m.idle() - pull J2 pin low (0V) \n \
-           m.reset() - send 0xAA to battery. Return true if batter yreplies wih 0xAA \n \
-           m.get_snap() - request 'snapchat' from battery (0x61)\n \
-           m.configure() - send 'configure' message (0x60, charger parameters)\n \
-           m.calibrate() - calibration/interrupt command (0x55) \n \
-           m.keepalive() - send charge current request (0x62) \n \
-           \n \
-           m.help() - this message\n \
-           \n \
-           exit() - end program\n") 
+            DIAGNOSTICS: \n \
+            m.health() - print simple health report on battery \n \
+            m.read_id() - print labelled and formatted diagnostics \n \
+            m.read_all() - print all known registers in 0x01 command \n \
+            m.read_all_spreadsheet() - print registers in spreadsheet format \n \
+            \n \
+            m.help() - this message\n \
+            m.adv_help() - advanced help\n \
+            \n \
+            exit() - end program\n")
+           
+    def adv_help(self):
+        print("Advanced functions: \n \
+            CHARGING SIMULATION: \n \
+            m.simulate() - simulate charging comms \n \
+            m.simulate_for(t) - simulate for t seconds \n \
+            m.high_for(t) - bring J2 high for t sec, then idle \n \
+            \n \
+            m.write_message(message) - write ascii string to 0x0023 register (20 chars)\n \
+            \n \
+            Debug: \n \
+            m.PRINT_TX = True - boolean to enable TX messages \n \
+            m.PRINT_RX = True - boolean to enable RX messages \n \
+            m.txrx_print(bool) - set PRINT_TX & RX to bool \n \
+            m.txrx_save_and_set(bool) - save PRINT_TX & RX state, then set both to bool \n \
+            m.txrx_restore() - restore PRINT_TX & RX to saved values \n \
+            m.brute(addr_msb, addr_lsb) \n \
+            m.full_brute(start, stop, len) - check registers from 'start' to 'stop'. look for 'len' bytes \n \
+            m.debug(addr_msb, addr_lsb, len, rsp_len) - send reset() then cmd() to battery \n \
+            m.try_cmd(cmd, addr_h, addr_l, len) - try 'cmd' at [addr_h addr_l] with 'len' bytes \n \
+            \n \
+            Internal:\n \
+            m.high() - bring J2 pin high (20V)\n \
+            m.idle() - pull J2 pin low (0V) \n \
+            m.reset() - send 0xAA to battery. Return true if batter yreplies wih 0xAA \n \
+            m.get_snap() - request 'snapchat' from battery (0x61)\n \
+            m.configure() - send 'configure' message (0x60, charger parameters)\n \
+            m.calibrate() - calibration/interrupt command (0x55) \n \
+            m.keepalive() - send charge current request (0x62) \n") 
 
 
 if __name__ == '__main__':
