@@ -680,7 +680,10 @@ class M18:
                         case "sn":
                             btype = int.from_bytes(data[0:2],'big')
                             serial = int.from_bytes(data[2:5],'big')
-                            array_value = value = f"Type: {btype:3d}, Serial: {serial:d}"
+                            if( output == "label" or output == "array" ):
+                                array_value = value = f"Type: {btype:3d}, Serial: {serial:d}"
+                            else:
+                                value = f"{btype}\n{serial}"
                         case "adc_t":
                             array_value = value = self.calculate_temperature(int.from_bytes(data, 'big'))
                         case "dec_t":
@@ -688,7 +691,10 @@ class M18:
                             array_value = value = f"{temp:.2f}"
                         case "cell_v":
                             array_value = cv = [int.from_bytes(data[i:i+2], 'big') for i in range(0, 10, 2)]
-                            value = f"1: {cv[0]:4d}, 2: {cv[1]:4d}, 3: {cv[2]:4d}, 4: {cv[3]:4d}, 5: {cv[4]:4d}"
+                            if( output == "label" ):
+                                value = f"1: {cv[0]:4d}, 2: {cv[1]:4d}, 3: {cv[2]:4d}, 4: {cv[3]:4d}, 5: {cv[4]:4d}"
+                            elif( output == "raw" ):
+                                value = f"{cv[0]:4d}\n{cv[1]:4d}\n{cv[2]:4d}\n{cv[3]:4d}\n{cv[4]:4d}"
                    
                 else:
                     array_value = None
@@ -753,7 +759,7 @@ class M18:
             print(f"read_all_spreadsheet: Failed with error: {e}")
             
     
-    def health(self):
+    def health(self, force_refresh = True):
         """
         Print labelled and formatted summary of key data.
         Some data is calculated, like 'imbalance' and 'total time on tool'
@@ -790,25 +796,25 @@ class M18:
         
         try:
             print("Reading battery. This will take 5-10sec\n")
-            array = self.read_id(reg_list, True, "array")
+            array = self.read_id(reg_list, force_refresh, "array")
             
             sn = array[40][1]
             numbers = re.findall(r'\d+\.?\d*', sn)
             bat_type = numbers[0]
             e_serial = numbers[1]
             bat_lookup = {
-                "37": "2Ah CP (5s1p 18650)",
-                "40": "5Ah XC (5s2p 18650)",
-                "165": "5Ah XC (5s2p 18650)",
-                "46": "6Ah XC (5s2p 18650)",
-                "104": "3Ah HO (5s1p 21700)",
-                "106": "6Ah HO (5s2p 21700)",
-                "107": "8Ah HO (5s2p 21700)",
-                "108": "12Ah HO (5s3p 21700)",
-                "384": "12Ah Forge (5s3p 21700 tabless)"
+                "37": [2, "2Ah CP (5s1p 18650)"],
+                "40": [5, "5Ah XC (5s2p 18650)"],
+                "165": [5, "5Ah XC (5s2p 18650)"],
+                "46": [6, "6Ah XC (5s2p 18650)"],
+                "104": [3, "3Ah HO (5s1p 21700)"],
+                "106": [4, "6Ah HO (5s2p 21700)"],
+                "107": [8, "8Ah HO (5s2p 21700)"],
+                "108": [12, "12Ah HO (5s3p 21700)"],
+                "384": [12, "12Ah Forge (5s3p 21700 tabless)"]
             }
             bat_text = bat_lookup.get(bat_type, "Unknown")
-            print(f"Type: {bat_type} [{bat_text}]")
+            print(f"Type: {bat_type} [{bat_text[1]}]")
             print("E-serial:", e_serial, "(does NOT match case serial)")
             
             #now = datetime.datetime.now(datetime.timezone.utc)
@@ -835,6 +841,7 @@ class M18:
             
             print("\nTOOL USE STATS:")
             print("Total discharge (Ah):", f"{array[7][1]/3600:.2f}")
+            print("Total discharge cycles:", f"{array[7][1]/3600/bat_text[0]:.2f}") 
             print("Times discharged to empty:", array[8][1])
             print("Times overheated:", array[9][1])
             print("Overcurrent events:", array[10][1])
