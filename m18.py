@@ -6,6 +6,9 @@ import argparse
 import datetime
 import math
 import re
+
+import requests
+
 try:
     import readline
 except ImportError:
@@ -616,12 +619,13 @@ class M18:
         #       "label" - prints labelled registers to stdout
         #       "raw" - prints values only (for pasting into spreadsheet)
         #       "array" - returns array of [id, value]
+        #       "form" - returns array of [value]
         """
         # If empty, default is print all
         if ( len(id_array) == 0 ):
             id_array = range(0,len(data_id))
             
-        if not ( (output == "label") or (output == "raw") or (output == "array") ):
+        if not ( (output == "label") or (output == "raw") or (output == "array") or (output == "form")):
             print(f"Unrecognised 'output' = {output}. Please choose \"label\", \"raw\", or \"array\"")
             output = "label"
             
@@ -645,6 +649,8 @@ class M18:
                 print("ID  ADDR   LEN TYPE       LABEL                                   VALUE")
             elif ( output == "raw" ):
                 print(formatted_time)
+            elif ( output == "form" ):
+                array.append(formatted_time)
             
             
             self.reset()
@@ -708,8 +714,11 @@ class M18:
                     print(value)
                 elif( output == "array" ):
                     array.append([i, array_value])
+                elif( output == "form" ):
+                    # Print spreadsheet format
+                    array.append(value)
                     
-            if( output == "array" and array ):        
+            if( (output == "array" or output == "form") and array ):        
                 return array
                     
             self.idle()
@@ -878,8 +887,63 @@ class M18:
             
         # restore debug status
         self.txrx_restore()
-    
-    
+
+
+
+    def submit_form(self):
+        form_url = 'https://docs.google.com/forms/d/e/1FAIpQLScvTbSDYBzSQ8S4XoF-rfgwNj97C-Pn4Px3GIixJxf0C1YJJA/formResponse'
+
+        # Get data from battery
+        print("Getting data from battery...")
+        output = self.read_id(output="form")
+
+        if output == None:
+            print("submit_form: No output returned, aborting")
+        s_output = "\n".join(map(str, output))
+
+        # Prompt the user for each field
+        one_key_id = input("Enter One-Key ID (example: H18FDCAD): ")
+        date = input("Enter Date (example: 190316): ")
+        serial_number = input("Enter Serial number (example: 0807426): ")
+        sticker = input("Enter Sticker (example: 4932 4512 45): ")
+        type = input("Enter Type (example: M18B9): ")
+        capacity = input("Enter Capacity (example: 9.0Ah): ")
+
+        
+        form_data = {
+            # One-Key ID (H18FDCAD)
+            #   Option: any text
+            "entry.905246449": one_key_id,
+            # Date (190316)
+            #   Option: any text
+            "entry.453401884": date,
+            # Serial number (0807426) (required)
+            #   Option: any text
+            "entry.2131879277": serial_number,
+            # Sticker (4932 4512 45)
+            #   Option: any text
+            "entry.337435885": sticker,
+            # Type (M18B9) (required)
+            #   Option: any text
+            "entry.1496274605": type,
+            # Capacity (9.0Ah) (required)
+            #   Option: any text
+            "entry.324224550": capacity,
+            # Output from m18-protocol (required)
+            #   Option: any text
+            "entry.716337020": s_output
+        }
+
+        # Submit the form
+        response = requests.post(form_url, data=form_data)
+
+        # Check response
+        if response.status_code == 200:
+            print("Form submitted successfully!")
+        else:
+            print(f"submit_form: Failed to submit form. Status code: {response.status_code}")
+
+
 
     def help(self):
         print("Functions: \n \
@@ -888,6 +952,7 @@ class M18:
             m.read_id() - print labelled and formatted diagnostics \n \
             m.read_all() - print all known registers in 0x01 command \n \
             m.read_all_spreadsheet() - print registers in spreadsheet format \n \
+            m.submit_form() - prompts for manual inputs and submits battery diagnostics data \n \
             \n \
             m.help() - this message\n \
             m.adv_help() - advanced help\n \
