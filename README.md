@@ -2,11 +2,9 @@
 
 This repository contains research about the Milwaukee M18 protocol.
 
-First step was to fake the charger commands in order to verify that the communication works as expected. :white_check_mark:
+First step was to fake the charger commands in order to verify that the communication works as expected. :white_check_mark: Next step was figuring out what other commands are supported. :white_check_mark:
 
-Next step was figuring out what other commands are supported. :white_check_mark:
-
-There are still some unknown data in the registers.
+While most of the registers and data are known, there are still some unknown. Contributions are welcome!
 
 ## Hardware
 
