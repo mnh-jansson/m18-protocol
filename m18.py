@@ -822,7 +822,7 @@ class M18:
                 "108": [12, "12Ah HO (5s3p 21700)"],
                 "384": [12, "12Ah Forge (5s3p 21700 tabless)"]
             }
-            bat_text = bat_lookup.get(bat_type, "Unknown")
+            bat_text = bat_lookup.get(bat_type, [0, "Unknown"])
             print(f"Type: {bat_type} [{bat_text[1]}]")
             print("E-serial:", e_serial, "(does NOT match case serial)")
             
@@ -850,7 +850,11 @@ class M18:
             
             print("\nTOOL USE STATS:")
             print("Total discharge (Ah):", f"{array[7][1]/3600:.2f}")
-            print("Total discharge cycles:", f"{array[7][1]/3600/bat_text[0]:.2f}") 
+            if bat_text[0] != 0:
+                total_discharge_cycles = f"{array[7][1] / 3600 / bat_text[0]:.2f}"
+            else:
+                total_discharge_cycles = 'Unknown battery type, unable to calculate'
+            print("Total discharge cycles:", total_discharge_cycles)
             print("Times discharged to empty:", array[8][1])
             print("Times overheated:", array[9][1])
             print("Overcurrent events:", array[10][1])
