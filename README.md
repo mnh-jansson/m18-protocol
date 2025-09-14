@@ -12,6 +12,8 @@ In order to simulate the charger, the following circuit is proposed:
 
 **NOTE When using fake FT232 chips, break condition is not supported. The behaviour can be emulated by using the DTR line to pull the TX line low.**
 
+The voltage of the USB to Serial adapter should be 3.3V
+
 ![hardware](docs/wiring.png)
 
 ## Requirements
@@ -31,5 +33,6 @@ Once the required packages are installed, run the following command. If the seri
 ```bash
 python3 m18.py
 ```
+
 
 This opens an interractive shell that can be used to send different commands. Refer to the instructions provided in the shell.
