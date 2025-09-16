@@ -813,6 +813,7 @@ class M18:
             e_serial = numbers[1]
             bat_lookup = {
                 "37": [2, "2Ah CP (5s1p 18650)"],
+                "38": [2, "3Ah XC (5s2p 18650)"],
                 "40": [5, "5Ah XC (5s2p 18650)"],
                 "165": [5, "5Ah XC (5s2p 18650)"],
                 "46": [6, "6Ah XC (5s2p 18650)"],
@@ -820,6 +821,7 @@ class M18:
                 "106": [4, "6Ah HO (5s2p 21700)"],
                 "107": [8, "8Ah HO (5s2p 21700)"],
                 "108": [12, "12Ah HO (5s3p 21700)"],
+                "383": [8, "8Ah Forge (5s2p 21700 tabless)"],
                 "384": [12, "12Ah Forge (5s3p 21700 tabless)"]
             }
             bat_text = bat_lookup.get(bat_type, [0, "Unknown"])
