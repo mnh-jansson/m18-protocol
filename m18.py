@@ -699,7 +699,7 @@ class M18:
                             array_value = cv = [int.from_bytes(data[i:i+2], 'big') for i in range(0, 10, 2)]
                             if( output == "label" ):
                                 value = f"1: {cv[0]:4d}, 2: {cv[1]:4d}, 3: {cv[2]:4d}, 4: {cv[3]:4d}, 5: {cv[4]:4d}"
-                            elif( output == "raw" ):
+                            else:
                                 value = f"{cv[0]:4d}\n{cv[1]:4d}\n{cv[2]:4d}\n{cv[3]:4d}\n{cv[4]:4d}"
                    
                 else:
