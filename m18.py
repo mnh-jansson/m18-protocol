@@ -958,8 +958,7 @@ class M18:
             DIAGNOSTICS: \n \
             m.health() - print simple health report on battery \n \
             m.read_id() - print labelled and formatted diagnostics \n \
-            m.read_all() - print all known registers in 0x01 command \n \
-            m.read_all_spreadsheet() - print registers in spreadsheet format \n \
+            m.read_id(output=\"raw\") - print in spreadsheet format \n \
             m.submit_form() - prompts for manual inputs and submits battery diagnostics data \n \
             \n \
             m.help() - this message\n \
@@ -969,6 +968,9 @@ class M18:
            
     def adv_help(self):
         print("Advanced functions: \n \
+            m.read_all() - print all known bytes in 0x01 command \n \
+            m.read_all_spreadsheet() - print bytes in spreadsheet format \n \
+            \n \
             CHARGING SIMULATION: \n \
             m.simulate() - simulate charging comms \n \
             m.simulate_for(t) - simulate for t seconds \n \
@@ -1002,10 +1004,25 @@ if __name__ == '__main__':
         description="M18 Protocol Interface",
         epilog="Connect UART-TX to M18-J2 and UART-RX to M18-J1 to fake the charger and UART-GND to M18-GND")
     parser.add_argument('--port', type=str, help="Serial port to connect to (e.g., COM5)")
+    parser.add_argument('--health', action='store_true', help='Print health report and exit')
+    parser.add_argument('--ss', action='store_true', help='Spreadsheet output: Print all register values and exit')
+    parser.add_argument('--idle', action='store_true', help='Set TX=Low and exit. Prevents unwanted charge increments')
     args = parser.parse_args()
 
-    m = M18(args.port)
+    # --ss flag must also have --port set.
+    # This prevents 'm18.py --ss | clip.exe' getting stuck in menu they can't see
+    if (args.port is None) and args.ss:
+        print("You must specify a port. E.g. \"--port COM5\"")
+    else:
+        m = M18(args.port)
+        if args.idle:
+            m.idle()
+            print("TX should now be low voltage (<1V). Safe to connect")
+        elif args.health:
+            m.health()
+        elif args.ss:
+            m.read_id(output="raw")
+        else:
+            m.help()
+            code.InteractiveConsole(locals = locals()).interact('Entering shell...')    
     
-    m.help()
-    
-    code.InteractiveConsole(locals = locals()).interact('Entering shell...')
