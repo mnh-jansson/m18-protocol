@@ -54,3 +54,10 @@ This opens an interractive shell that can be used to send different commands. Re
 A spreadsheet template can be found below. Do NOT request access, go to `File -> Make a copy` or `File -> Download`
 
 https://docs.google.com/spreadsheets/d/1rZZ3mtU2uwuo_uMv7O7hi5kyPA9AXUDU5CBsHKWMi-U/
+
+## Windows Users
+There are 4 .bat files for Windows users that are not familiar with the command line. Double click on them to run them.
+* `m18_idle.bat` will prompt you to select a serial device, then bring the TX (J2) pin low. This is recommended before connecting to the battery to avoid increasing the counter for dumb-charges
+* `m18_health.bat` will print out a simple health report. The adapter must be conncted to the battery or you will get errors
+* `m18_interactive.bat` will put you into the interactive shell where you can call `m.health()`, `m.read_id()`, and submit your diagnostics to us with `m.submit_form()`
+* `m18_clipboard.bat` will fetch all diagnostic registers and copy them to the clipboard. You must right-click on this .bat file and select `Edit`, then change `--port COM5` to whatever your port is. Once finished, you can select a cell in a spreadsheet (for example, the template provided above), and ctrl+v to copy all the registers
