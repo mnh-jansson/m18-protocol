@@ -18,7 +18,7 @@ The voltage of the USB to Serial adapter should be 3.3V
 
 ![hardware](docs/wiring.png)
 
-## Requirements
+## Requirements and Usage
 
 To use this software, Python is required. Please read the [python](https://docs.python.org/3/) and [pip](https://pip.pypa.io/en/stable/installation/) documentation.
 
@@ -27,8 +27,6 @@ Install the required packages by running
 ```bash
 pip install -r requirements.txt
 ```
-
-## Usage
 
 Once the required packages are installed, run the following command. If the serial port is known, specify it using `--port` to speed things up.
 
@@ -40,9 +38,14 @@ or on Windows
 python.exe m18.py
 ```
 
+Alternatively, use the [uv](https://docs.astral.sh/uv/) package manager to create an isolated virtual environment, install the correct version of Python, install dependencies, and execute the project:
+
+```bash
+uv run m18.py
+```
 
 
-This opens an interractive shell that can be used to send different commands. Refer to the instructions provided in the shell.
+This opens an interactive shell that can be used to send different commands. Refer to the instructions provided in the shell.
 
 ## Output
 
@@ -56,9 +59,9 @@ A spreadsheet template can be found below. Do NOT request access, go to `File ->
 https://docs.google.com/spreadsheets/d/1rZZ3mtU2uwuo_uMv7O7hi5kyPA9AXUDU5CBsHKWMi-U/
 
 ## Windows Users
-There are 4 .bat files for Windows users that are not familiar with the command line. Double click on them to run them.
+There are 4 .bat files for Windows users that are not familiar with the command line. Double-click on them to run them.
 * `m18_idle.bat` will prompt you to select a serial device, then bring the TX (J2) pin low. This is recommended before connecting to the battery to avoid increasing the counter for dumb-charges
-* `m18_health.bat` will print out a simple health report. The adapter must be conncted to the battery or you will get errors
+* `m18_health.bat` will print out a simple health report. The adapter must be connected to the battery or you will get errors
 * `m18_interactive.bat` will put you into the interactive shell where you can call `m.health()`, `m.read_id()`, and submit your diagnostics to us with `m.submit_form()`
 * `m18_clipboard.bat` will fetch all diagnostic registers and copy them to the clipboard. You must right-click on this .bat file and select `Edit`, then change `--port COM5` to whatever your port is. Once finished, you can select a cell in a spreadsheet (for example, the template provided above), and ctrl+v to copy all the registers
 
