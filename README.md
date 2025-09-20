@@ -61,3 +61,15 @@ There are 4 .bat files for Windows users that are not familiar with the command 
 * `m18_health.bat` will print out a simple health report. The adapter must be conncted to the battery or you will get errors
 * `m18_interactive.bat` will put you into the interactive shell where you can call `m.health()`, `m.read_id()`, and submit your diagnostics to us with `m.submit_form()`
 * `m18_clipboard.bat` will fetch all diagnostic registers and copy them to the clipboard. You must right-click on this .bat file and select `Edit`, then change `--port COM5` to whatever your port is. Once finished, you can select a cell in a spreadsheet (for example, the template provided above), and ctrl+v to copy all the registers
+
+## Troubleshooting
+Some USB serial adapters don't give/receive the correct voltages when paired with M18 batteries. To test if this is your problem, connect adapter to battery then measure voltages between B- and J2 (next to B-) and J1 (next to B+). Then use the m.idle() and m.high() commands.
+
+You should see:
+* m.idle(): J2<1V, J1<1V
+* m.high(): J2>8V, J2>2V
+
+I get:
+* m.idle(): J2=0.13V, J1=0.81V
+* m.high(): J2=8.8V, J1=3.3V
+
