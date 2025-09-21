@@ -807,6 +807,7 @@ class M18:
             bat_type = numbers[0]
             e_serial = numbers[1]
             bat_lookup = {
+                "36": [1.5, "1.5Ah CP (5s1p 18650)"],
                 "37": [2, "2Ah CP (5s1p 18650)"],
                 "38": [3, "3Ah XC (5s2p 18650)"],
                 "40": [5, "5Ah XC (5s2p 18650)"],
