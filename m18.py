@@ -822,7 +822,8 @@ class M18:
                 "107": [8, "8Ah HO (5s2p 21700)"],
                 "108": [12, "12Ah HO (5s3p 21700)"],
                 "383": [8, "8Ah Forge (5s2p 21700 tabless)"],
-                "384": [12, "12Ah Forge (5s3p 21700 tabless)"]
+                "384": [12, "12Ah Forge (5s3p 21700 tabless)"],
+                "424": [5, "5Ah Resistant (5s2p 18650)"]
             }
             bat_text = bat_lookup.get(bat_type, [0, "Unknown"])
             print(f"Type: {bat_type} [{bat_text[1]}]")
