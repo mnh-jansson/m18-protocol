@@ -9,11 +9,6 @@ import re
 
 import requests
 
-try:
-    import readline
-except ImportError:
-    pass
-
 data_matrix = [
     [0x00, 0x00, 0x02],
     [0x00, 0x02, 0x02],
