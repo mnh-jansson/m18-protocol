@@ -76,6 +76,8 @@ I get:
 * m.idle(): J2=0.13V, J1=0.81V
 * m.high(): J2=8.8V, J1=3.3V
 
-The [circuit mentioned here](https://github.com/mnh-jansson/m18-protocol/issues/7#issuecomment-3312151944) has fixed this issue for some people
+If m.idle() has J1 > 1V, then [this circuit](https://github.com/mnh-jansson/m18-protocol/issues/7#issuecomment-3312151944) by Spud2233 has fixed this issue for some people.
+![isolator](docs/spud_isolator.png)
+
 
 
