@@ -992,7 +992,7 @@ class M18:
             Internal:\n \
             m.high() - bring J2 pin high (20V)\n \
             m.idle() - pull J2 pin low (0V) \n \
-            m.reset() - send 0xAA to battery. Return true if batter yreplies wih 0xAA \n \
+            m.reset() - send 0xAA to battery. Return true if battery replies wih 0xAA \n \
             m.get_snapchat() - request 'snapchat' from battery (0x61)\n \
             m.configure() - send 'configure' message (0x60, charger parameters)\n \
             m.calibrate() - calibration/interrupt command (0x55) \n \
