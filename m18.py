@@ -1,3 +1,13 @@
+"""
+Core protocol implementation for communicating with Milwaukee M18 battery packs.
+
+This module exposes the :class:`M18` class, which handles all low-level serial
+communication and provides helper routines for querying registers, simulating
+charger behaviour, and collecting diagnostic data. The large data tables at the
+top of the file describe the known register layout for the pack so higher-level
+functions can translate raw bytes into meaningful information.
+"""
+
 import code
 import datetime
 import struct
@@ -9,6 +19,10 @@ from requests import post
 from serial import Serial
 from serial.tools import list_ports
 
+# Address map describing contiguous register blocks to read from the pack.
+# Each entry is [MSB, LSB, LENGTH] describing the starting address and
+# number of bytes available in that window. These windows are used to prime
+# caches and pull coherent chunks of data before decoding individual fields.
 data_matrix = [
     [0x00, 0x00, 0x02],
     [0x00, 0x02, 0x02],
@@ -45,13 +59,14 @@ data_matrix = [
 ]
 
 
-# label, addr, len, type 
-#   uint - unsigned integer
-#   date - UNIX time (seconds from 1 Jan 1970)
-#   ascii - ascii string
-#   sn - serial number (2 bytes battery type, 3 bytes serial)
-#   adc_t - analog-to-digital converter temperature (mV of thermistor)
-#   dec_t - decimal temperature (byte_1 + byte_2/255)
+# Lookup table describing each known register and how to decode it. Entries are
+# formatted as [address, length, data_type, label] with the following types:
+#   uint   - unsigned integer
+#   date   - UNIX time (seconds from 1 Jan 1970)
+#   ascii  - ASCII string
+#   sn     - serial number (2 bytes battery type, 3 bytes serial)
+#   adc_t  - analog-to-digital converter temperature (mV of thermistor)
+#   dec_t  - decimal temperature (byte_1 + byte_2/255)
 #   cell_v - cell voltages (1: 3568, 2: 3567, 3:3570, etc)
 data_id = [
     [0x0000, 2,  "uint",  "Cell type"],                       # 0
@@ -250,6 +265,7 @@ def print_debug_bytes(data):
     print(f"DEBUG: ", data_print)
 
 class M18:
+    """Encapsulates serial communications and helper utilities for M18 packs."""
     SYNC_BYTE     = 0xAA
     CAL_CMD       = 0x55
     CONF_CMD      = 0x60
@@ -265,24 +281,33 @@ class M18:
     PRINT_RX = False
     
     # Used to temporarily disable then restore print_tx/rx state
-    PRINT_TX_SAVE = False 
+    PRINT_TX_SAVE = False
     PRINT_RX_SAVE = False
-        
+
     def txrx_print(self, enable = True):
+        """Toggle verbose logging of transmitted and received frames."""
         self.PRINT_TX = enable
         self.PRINT_RX = enable
-        
+
     def txrx_save_and_set(self, enable = True):
+        """Save current TX/RX logging state and apply a temporary setting."""
         self.PRINT_TX_SAVE = self.PRINT_TX
         self.PRINT_RX_SAVE = self.PRINT_RX
         self.txrx_print(enable)
-        
+
     def txrx_restore(self):
+        """Restore TX/RX logging flags saved via :meth:`txrx_save_and_set`."""
         self.PRINT_TX = self.PRINT_TX_SAVE
         self.PRINT_RX = self.PRINT_RX_SAVE
             
 
     def __init__(self, port):
+        """Create a protocol instance and open the serial port.
+
+        Args:
+            port (str | None): Serial device path. When ``None`` the user is
+                prompted to choose from detected ports in an interactive menu.
+        """
         if port is None:
             print("*** NO PORT SPECIFIED ***")
             print("Available serial ports (choose one that says USB somewhere):")
@@ -345,36 +370,43 @@ class M18:
             return False
 
     def update_acc(self):
+        """Cycle the access control code used when issuing commands."""
         acc_values = [0x04, 0x0C, 0x1C]
         current_index = acc_values.index(self.ACC)
         next_index = (current_index + 1) % len(acc_values)
         self.ACC = acc_values[next_index]
 
     def reverse_bits(self, byte):
+        """Reverse the bit-order of a single byte."""
         return int(f"{byte:08b}"[::-1], 2)
-    
+
     def checksum(self, payload):
+        """Calculate a simple additive checksum for the payload."""
         checksum = 0
         for byte in payload:
             checksum += byte & 0xFFFF
         return checksum
 
     def add_checksum(self, lsb_command):
-        lsb_command += struct.pack(">H", self.checksum(lsb_command)) 
+        """Append a big-endian checksum to a command payload."""
+        lsb_command += struct.pack(">H", self.checksum(lsb_command))
         return lsb_command
-    
+
     def send(self, command):
+        """Transmit a raw command buffer after reversing bit order for the wire."""
         self.port.reset_input_buffer()
         debug_print = " ".join(f"{byte:02X}" for byte in command)
         msb = bytearray(self.reverse_bits(byte) for byte in command)
         if self.PRINT_TX:
             print(f"Sending:  {debug_print}")
         self.port.write(msb)
-    
+
     def send_command(self, command):
+        """Send a command with checksum pre-appended."""
         self.send(self.add_checksum(command))
 
     def read_response(self, size):
+        """Read and decode a response of ``size`` bytes from the serial port."""
         msb_response = self.port.read(1)
         if not msb_response or len(msb_response) < 1:
             raise ValueError("Empty response")
@@ -390,28 +422,33 @@ class M18:
         return lsb_response
 
     def configure(self, state):
+        """Send configuration command declaring charger capabilities."""
         self.ACC = 4
-        self.send_command(struct.pack('>BBBHHHBB', self.CONF_CMD, self.ACC, 8, 
+        self.send_command(struct.pack('>BBBHHHBB', self.CONF_CMD, self.ACC, 8,
                                     self.CUTOFF_CURRENT, self.MAX_CURRENT, self.MAX_CURRENT, state, 13))
         return self.read_response(5)
 
     def get_snapchat(self):
+        """Request a short snapshot from the pack and advance ACC."""
         self.send_command(struct.pack('>BBB', self.SNAP_CMD, self.ACC, 0))
         self.update_acc()
         return self.read_response(8)
-    
+
     def keepalive(self):
+        """Send a keepalive/charge-current request."""
         self.send_command(struct.pack('>BBB', self.KEEPALIVE_CMD, self.ACC, 0))
         return self.read_response(9)
-    
+
     def calibrate(self):
+        """Trigger calibration/interrupt command on the pack."""
         self.send_command(struct.pack('>BBB', self.CAL_CMD, self.ACC, 0))
         self.update_acc()
         return self.read_response(8)
     
     def simulate(self):
+        """Continuously mimic charger behaviour until interrupted."""
         print("Simulating charger communication")
-        
+
         self.txrx_save_and_set(True) # Turn on TX/RX messages
         
         self.reset()
@@ -435,6 +472,7 @@ class M18:
     
 
     def simulate_for(self, duration):
+        """Simulate charging communication for ``duration`` seconds."""
         # Simulate charging for 'time' seconds
         print(f"Simulating charger communication for {duration} seconds...")
         begin_time = time.time()
@@ -457,6 +495,7 @@ class M18:
             print(f"Duration: ", time.time() - begin_time)
 
     def debug(self, a,b,c,length):
+        """Send a single command after reset and print the raw response."""
         
         # Turn off debug, restore after printing
         rx_debug = self.PRINT_RX
@@ -473,6 +512,7 @@ class M18:
         self.PRINT_RX = rx_debug
         
     def try_cmd(self, cmd, msb, lsb, length, ret_len=0):
+        """Fire an arbitrary command and display the response for debugging."""
         # Turn off TX/RX printing, restore after printing
         self.txrx_save_and_set(False)
         
@@ -490,11 +530,13 @@ class M18:
         
     
     def cmd(self, a,b,c,length, command = 0x01):
+        """Send a read command to address ``a:b`` with length ``c``."""
         self.send_command(struct.pack('>BBBBBB', command, 0x04, 0x03, a, b, c))
         return self.read_response(length)
         
 
     def brute(self, a, b, length = 0xFF, command = 0x01):
+        """Probe a single address with many lengths looking for valid replies."""
         self.reset()
         try:
             for i in range(length):
@@ -532,10 +574,12 @@ class M18:
             self.idle() 
     
     def wcmd(self, a,b,c,length):
+        """Send a write command to address ``a:b`` requesting ``c`` bytes."""
         self.send_command(struct.pack('>BBBBBB', 0x01, 0x05, 0x03, a, b, c))
         return self.read_response(length)
 
     def write_message(self, message):
+        """Write a short ASCII message into the pack's note register."""
         try:
             if len(message) > 0x14:
                 print("ERROR: Message too long!")
@@ -549,14 +593,17 @@ class M18:
             print(f"write_message: Failed with error: {e}")
 
     def idle(self):
+        """Drive control pins low to indicate idle/stop state."""
         self.port.break_condition = True
         self.port.dtr = True
 
     def high(self):
+        """Drive control pins high to request charging."""
         self.port.break_condition = False
         self.port.dtr = False
-        
+
     def high_for(self, duration):
+        """Bring control pins high for ``duration`` seconds then idle."""
         self.high()
         time.sleep(duration)
         self.idle()
@@ -584,12 +631,14 @@ class M18:
         return round(temperature, 2)
 
     def bytes2dt(self, time_bytes):
+        """Convert a big-endian timestamp to an aware ``datetime`` object."""
         epoch_time = int.from_bytes(time_bytes, 'big')
         dt = datetime.datetime.fromtimestamp(epoch_time, tz=datetime.UTC)
         return dt
 
         
     def read_all(self):
+        """Read and print every address block defined in :data:`data_matrix`."""
         try:
             self.reset()
             for addr_h, addr_l, length in data_matrix:
@@ -797,7 +846,7 @@ class M18:
         
         
         # turn off debugging messages
-        self.txrx_save_and_set(False)
+        self.txrx_save_and_set(True)
         
         try:
             print("Reading battery. This will take 5-10sec\n")
@@ -899,6 +948,7 @@ class M18:
 
 
     def submit_form(self):
+        """Collect diagnostics and submit them to the community Google Form."""
         form_url = 'https://docs.google.com/forms/d/e/1FAIpQLScvTbSDYBzSQ8S4XoF-rfgwNj97C-Pn4Px3GIixJxf0C1YJJA/formResponse'
 
         # Get data from battery
@@ -956,6 +1006,7 @@ class M18:
 
 
     def help(self):
+        """Print a concise overview of commonly used interactive commands."""
         print("Functions: \n \
             DIAGNOSTICS: \n \
             m.health() - print simple health report on battery \n \
@@ -967,8 +1018,9 @@ class M18:
             m.adv_help() - advanced help\n \
             \n \
             exit() - end program\n")
-           
+
     def adv_help(self):
+        """Print extended help covering simulations and debugging helpers."""
         print("Advanced functions: \n \
             m.read_all() - print all known bytes in 0x01 command \n \
             m.read_all_spreadsheet() - print bytes in spreadsheet format \n \

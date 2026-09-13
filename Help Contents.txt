@@ -1,0 +1,121 @@
+Functions:
+             DIAGNOSTICS:
+             m.health() - print simple health report on battery
+             m.read_id() - print labelled and formatted diagnostics
+             m.read_id(output="raw") - print in spreadsheet format
+             m.submit_form() - prompts for manual inputs and submits battery diagnostics data
+
+             m.help() - this message
+             m.adv_help() - advanced help
+
+             exit() - end program
+
+Advanced functions:
+             m.read_all() - print all known bytes in 0x01 command
+             m.read_all_spreadsheet() - print bytes in spreadsheet format
+
+             CHARGING SIMULATION:
+             m.simulate() - simulate charging comms
+             m.simulate_for(t) - simulate for t seconds
+             m.high_for(t) - bring J2 high for t sec, then idle
+
+             m.write_message(message) - write ascii string to 0x0023 register (20 chars)
+
+             Debug:
+             m.PRINT_TX = True - boolean to enable TX messages
+             m.PRINT_RX = True - boolean to enable RX messages
+             m.txrx_print(bool) - set PRINT_TX & RX to bool
+             m.txrx_save_and_set(bool) - save PRINT_TX & RX state, then set both to bool
+             m.txrx_restore() - restore PRINT_TX & RX to saved values
+             m.brute(addr_msb, addr_lsb)
+             m.full_brute(start, stop, len) - check registers from 'start' to 'stop'. look for 'len' bytes
+             m.debug(addr_msb, addr_lsb, len, rsp_len) - send reset() then cmd() to battery
+             m.try_cmd(cmd, addr_h, addr_l, len) - try 'cmd' at [addr_h addr_l] with 'len' bytes
+
+             Internal:
+             m.high() - bring J2 pin high (20V)
+             m.idle() - pull J2 pin low (0V)
+             m.reset() - send 0xAA to battery. Return true if battery replies wih 0xAA
+             m.get_snapchat() - request 'snapchat' from battery (0x61)
+             m.configure() - send 'configure' message (0x60, charger parameters)
+             m.calibrate() - calibration/interrupt command (0x55)
+             m.keepalive() - send charge current request (0x62)
+
+
+
+
+@echo off
+
+echo ***************************************************
+echo ** Runs m18.py with spreadsheet output and       **
+echo ** copies to clipboard. You will not see output, **
+echo ** just a completion message. Then you can       **
+echo ** 'ctrl+v' into a spreadsheet                   **
+echo **                                               **
+echo ** THIS WILL TAKE ~10 SECONDS                    **
+echo **                                               **
+echo ** RIGHT-CLICK AND EDIT .BAT FILE.               **
+echo ** CHANGE "--port COM5" to where your adapter is **
+echo ** (you can delete this message)                 **
+echo ***************************************************
+
+python.exe .\m18.py --ss --port COM5 | clip.exe
+
+echo:  
+echo ***************************************************
+echo ** Finished. Now use 'ctrl+v' to paste           **
+echo ** diagnostics output into spreadsheet           **
+echo **                                               **
+echo ** If you get errors, you must edit this batch   **
+echo ** file to have the correct port. You may also   **
+echo ** have hardware issues. See github              **
+echo ***************************************************
+
+cmd /k
+
+
+
+
+:: RECOMMEND RUNNING m18_idle.bat BEFORE CONNECTING TO BATTERY
+:: Gives simple health report of M18 batteries
+:: Add "--port COM5" (or whatever your port is) to avoid
+:: having to enter it everytime
+
+@echo off
+echo ***************************************************
+echo ** RIGHT-CLICK AND EDIT .BAT FILE.               **
+echo ** ADD "--port COM5" to command                  **
+echo ** (or whatever port your serial adapter is on)  **
+echo ** (you can delete this message                  **
+echo ***************************************************
+
+python.exe .\m18.py --health
+cmd /k
+
+
+
+
+
+:: Puts serial adapter TX in idle (low = <1V)
+:: This prevents false charge count increases
+
+@echo off
+
+echo ***************************************************
+echo ** RIGHT-CLICK AND EDIT .BAT FILE.               **
+echo ** ADD "--port COM5" to command                  **
+echo ** (or whatever port your serial adapter is on)  **
+echo ** (you can delete this message                  **
+echo ***************************************************
+
+python.exe .\m18.py --idle
+cmd /k
+
+
+
+
+:: RECOMMEND RUNNING m18_idle.bat BEFORE CONNECTING TO BATTERY
+:: Runs script in interactive mode
+:: All functions available
+
+python.exe .\m18.py

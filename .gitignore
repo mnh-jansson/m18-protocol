@@ -1,0 +1,46 @@
+# Build results
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+
+# VS temporary files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# VS Code workspace
+.vscode/
+
+# Backup and cache
+*.cache
+*.dbmdl
+*.bak
+*.log
+*.tlog
+
+# Project-specific
+*.ncb
+*.sdf
+*.opensdf
+*.VC.db
+
+# Others you mentioned
+*.dtbcache.v2
+*.futdcache.v2
+*.suo
+*.DocumentLayout*
+*.metadata.*
+*.projects.*
+*.strings.*
+M18Batte.C072E897.Up2Date
+TempPE/
+
+# System
+__pycache__/
+runtimes/
+System.IO.Ports.dll
+System.Management.dll
